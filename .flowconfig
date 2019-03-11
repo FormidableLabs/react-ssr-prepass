@@ -1,0 +1,6 @@
+[ignore]
+.*/node_modules/@babel/[A-Z-a-z-]*/.*
+.*/node_modules/babel[A-Z-a-z-]*/.*
+
+[include]
+.*/node_modules/react[A-Z-a-z-]*/.*
