@@ -5,5 +5,8 @@
 [untyped]
 .*/node_modules/react-is/.*
 
+[libs]
+types/
+
 [include]
 .*/node_modules/react[A-Z-a-z-]*/.*
