@@ -2,5 +2,8 @@
 .*/node_modules/@babel/[A-Z-a-z-]*/.*
 .*/node_modules/babel[A-Z-a-z-]*/.*
 
+[untyped]
+.*/node_modules/react-is/.*
+
 [include]
 .*/node_modules/react[A-Z-a-z-]*/.*
