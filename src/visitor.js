@@ -42,24 +42,19 @@ import {
   REACT_LAZY_TYPE
 } from './symbols'
 
-const computeProps = (props: mixed, defaultProps: void | Object) => {
-  if (typeof defaultProps === 'object') {
-    return Object.assign({}, defaultProps, props)
-  }
-
-  return props
-}
+const computeProps = (props: mixed, defaultProps: void | Object) =>
+  typeof defaultProps === 'object'
+    ? Object.assign({}, defaultProps, props)
+    : props
 
 const visitComponent = (
   Component: $PropertyType<UserElement, 'type'>,
   props: mixed
 ): Node => {
   const context = maskContext(Component)
-  if (!shouldConstruct(Component)) {
-    return renderFunctionComponent(Component, props, context)
-  } else {
-    return renderClassComponent(Component, props, context)
-  }
+  return !shouldConstruct(Component)
+    ? renderFunctionComponent(Component, props, context)
+    : renderClassComponent(Component, props, context)
 }
 
 export const visitElement = (element: AbstractElement): AbstractElement[] => {
@@ -69,8 +64,7 @@ export const visitElement = (element: AbstractElement): AbstractElement[] => {
     case REACT_PROFILER_TYPE:
     case REACT_FRAGMENT_TYPE: {
       // These element types are simply traversed over but otherwise ignored
-      // $FlowFixMe
-      const fragmentElement = (element: FragmentElement)
+      const fragmentElement = ((element: any): FragmentElement)
       return getChildrenArray(fragmentElement.props.children)
     }
 
@@ -79,30 +73,27 @@ export const visitElement = (element: AbstractElement): AbstractElement[] => {
       return []
     }
 
-    case REACT_SUSPENSE_TYPE: {
-      // TODO: Store fallback and watch for thrown promise
-      // $FlowFixMe
-      const suspenseElement = (element: SuspenseElement)
-      return getChildrenArray(suspenseElement.props.children)
-    }
-
     case REACT_LAZY_TYPE: {
       // TODO: Execute promise and await it
       return []
     }
 
+    case REACT_SUSPENSE_TYPE: {
+      // TODO: Store fallback and watch for thrown promise
+      const suspenseElement = ((element: any): SuspenseElement)
+      return getChildrenArray(suspenseElement.props.children)
+    }
+
     case REACT_PROVIDER_TYPE: {
-      // $FlowFixMe
-      const providerElement = (element: ProviderElement)
+      const providerElement = ((element: any): ProviderElement)
       const newContextMap = forkContextMap()
-      const { value } = providerElement.props
+      const { value, children } = providerElement.props
       newContextMap.set(providerElement.type._context, value)
-      return getChildrenArray(providerElement)
+      return getChildrenArray(children)
     }
 
     case REACT_CONTEXT_TYPE: {
-      // $FlowFixMe
-      const consumerElement = (element: ConsumerElement)
+      const consumerElement = ((element: any): ConsumerElement)
       const { children } = consumerElement.props
 
       if (typeof children === 'function') {
@@ -114,8 +105,7 @@ export const visitElement = (element: AbstractElement): AbstractElement[] => {
     }
 
     case REACT_FORWARD_REF_TYPE: {
-      // $FlowFixMe
-      const forwardRefElement = (element: ForwardRefElement)
+      const forwardRefElement = ((element: any): ForwardRefElement)
       const Component = forwardRefElement.type.render
       const props = computeProps(
         forwardRefElement.props,
@@ -128,16 +118,14 @@ export const visitElement = (element: AbstractElement): AbstractElement[] => {
     }
 
     case REACT_MEMO_TYPE: {
-      // $FlowFixMe
-      const memoElement = (element: MemoElement)
+      const memoElement = ((element: any): MemoElement)
       const Component = memoElement.type.type
       const props = computeProps(memoElement.props, Component.defaultProps)
       return getChildrenArray(visitComponent(Component, props))
     }
 
     case REACT_ELEMENT_TYPE: {
-      // $FlowFixMe
-      const userElement = (element: UserElement)
+      const userElement = ((element: any): UserElement)
       const Component = userElement.type
       const props = computeProps(userElement.props, Component.defaultProps)
       return getChildrenArray(visitComponent(Component, props))
