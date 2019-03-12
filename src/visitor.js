@@ -8,9 +8,10 @@ import {
   type AbstractElement,
   type ConsumerElement,
   type ProviderElement,
-  type SystemElement,
+  type FragmentElement,
   type SuspenseElement,
-  type VirtualElement,
+  type ForwardRefElement,
+  type MemoElement,
   type UserElement
 } from './element'
 
@@ -71,8 +72,8 @@ export const visitElement = (element: AbstractElement): AbstractElement[] => {
     case REACT_FRAGMENT_TYPE: {
       // These element types are simply traversed over but otherwise ignored
       // $FlowFixMe
-      const systemElement = (element: SystemElement)
-      return getChildrenArray(systemElement.props.children)
+      const fragmentElement = (element: FragmentElement)
+      return getChildrenArray(fragmentElement.props.children)
     }
 
     case REACT_PORTAL_TYPE: {
@@ -114,14 +115,25 @@ export const visitElement = (element: AbstractElement): AbstractElement[] => {
       }
     }
 
-    case REACT_FORWARD_REF_TYPE:
-    case REACT_MEMO_TYPE: {
-      // React.forwardRef and React.memo are not treated differently during a prepass,
-      // but they will still need to be unwrapped and are hence a special case
+    case REACT_FORWARD_REF_TYPE: {
       // $FlowFixMe
-      const virtualElement = (element: VirtualElement)
-      const Component = virtualElement.type.type
-      const props = computeProps(virtualElement.props, Component.defaultProps)
+      const forwardRefElement = (element: ForwardRefElement)
+      const Component = forwardRefElement.type.render
+      const props = computeProps(
+        forwardRefElement.props,
+        Component.defaultProps
+      )
+      const context = maskContext(Component)
+      return getChildrenArray(
+        renderFunctionComponent(Component, props, context)
+      )
+    }
+
+    case REACT_MEMO_TYPE: {
+      // $FlowFixMe
+      const memoElement = (element: MemoElement)
+      const Component = memoElement.type.type
+      const props = computeProps(memoElement.props, Component.defaultProps)
       return getChildrenArray(visitComponent(Component, props))
     }
 
@@ -132,5 +144,8 @@ export const visitElement = (element: AbstractElement): AbstractElement[] => {
       const props = computeProps(userElement.props, Component.defaultProps)
       return getChildrenArray(visitComponent(Component, props))
     }
+
+    default:
+      return []
   }
 }

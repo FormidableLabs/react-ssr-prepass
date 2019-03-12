@@ -58,7 +58,7 @@ export type SuspenseElement = {
 }
 
 /** <ConcurrentMode>, <Fragment>, <Profiler>, <StrictMode> */
-export type SystemElement = {
+export type FragmentElement = {
   type:
     | typeof REACT_CONCURRENT_MODE_TYPE
     | typeof REACT_ASYNC_MODE_TYPE
@@ -80,14 +80,21 @@ export type LazyElement = {
   }
 }
 
-/** <React.memo(Comp)>, <React.forwardRef(Comp)> */
-export type VirtualElement = {
+/** <React.memo(Comp)>,  */
+export type MemoElement = {
   type: {
     type: ComponentType<DefaultProps> & ComponentStatics,
-    $$typeof:
-      | typeof REACT_MEMO_TYPE
-      | typeof REACT_PORTAL_TYPE
-      | typeof REACT_FORWARD_REF_TYPE
+    $$typeof: typeof REACT_MEMO_TYPE
+  },
+  props: DefaultProps,
+  $$typeof: typeof REACT_ELEMENT_TYPE
+}
+
+/** <React.forwardRef(Comp)> */
+export type ForwardRefElement = {
+  type: {
+    render: ComponentType<DefaultProps> & ComponentStatics,
+    $$typeof: typeof REACT_FORWARD_REF_TYPE
   },
   props: DefaultProps,
   $$typeof: typeof REACT_ELEMENT_TYPE
@@ -111,9 +118,10 @@ export type UserElement = {
 export type AbstractElement =
   | ConsumerElement
   | ProviderElement
-  | SystemElement
+  | FragmentElement
   | LazyElement
-  | VirtualElement
+  | ForwardRefElement
+  | MemoElement
   | UserElement
   | PortalElement
   | SuspenseElement
