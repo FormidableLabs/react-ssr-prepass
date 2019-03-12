@@ -3,6 +3,19 @@
 import type { Node } from 'react'
 import { forkContextMap } from '../state'
 
+const canCallUnmount: WeakMap<any, boolean> = new WeakMap()
+const forceUnmount = (Component: any, instance: any) => {
+  if (canCallUnmount.get(Component) !== false) {
+    try {
+      instance.componentWillUnmount()
+      canCallUnmount.set(Component, true)
+    } catch (_err) {
+      // Don't attempt to call unmount again
+      canCallUnmount.set(Component, false)
+    }
+  }
+}
+
 export const renderClassComponent = (
   Component: any,
   props: any,
@@ -26,6 +39,8 @@ export const renderClassComponent = (
   const instance = new Component(props, context, updater)
 
   let hasDerivedStateFromProps = false
+  let hasRunComponentWillMount = false
+
   if (typeof Component.getDerivedStateFromProps === 'function') {
     hasDerivedStateFromProps = true
     const partialState = Component.getDerivedStateFromProps(
@@ -49,6 +64,7 @@ export const renderClassComponent = (
     // In order to support react-lifecycles-compat polyfilled components,
     // Unsafe lifecycles should not be invoked for any component with the new gDSFP.
     instance.componentWillMount()
+    hasRunComponentWillMount = true
   }
 
   if (
@@ -58,6 +74,7 @@ export const renderClassComponent = (
     // In order to support react-lifecycles-compat polyfilled components,
     // Unsafe lifecycles should not be invoked for any component with the new gDSFP.
     instance.UNSAFE_componentWillMount()
+    hasRunComponentWillMount = true
   }
 
   // See: https://github.com/facebook/react/blob/13645d2/packages/react-dom/src/server/ReactPartialRenderer.js#L581-L611
@@ -96,6 +113,17 @@ export const renderClassComponent = (
   }
 
   const child = instance.render()
+
+  if (
+    typeof instance.componentWillUnmount === 'function' &&
+    hasRunComponentWillMount
+  ) {
+    // Some legacy components will allocate data in componentWillMount which
+    // can cause memory leaks if componentWillUnmount is not called.
+    // To prevent the leaks componentWillUnmount is defensively called but
+    // wrapped in a try/catch to prevent errors when browser APIs are used
+    forceUnmount(Component, instance)
+  }
 
   if (
     Component.childContextTypes !== undefined &&
