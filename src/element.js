@@ -13,7 +13,6 @@ import {
   REACT_PROFILER_TYPE,
   REACT_PROVIDER_TYPE,
   REACT_CONTEXT_TYPE,
-  REACT_ASYNC_MODE_TYPE,
   REACT_CONCURRENT_MODE_TYPE,
   REACT_FORWARD_REF_TYPE,
   REACT_SUSPENSE_TYPE,
@@ -61,7 +60,6 @@ export type SuspenseElement = {
 export type FragmentElement = {
   type:
     | typeof REACT_CONCURRENT_MODE_TYPE
-    | typeof REACT_ASYNC_MODE_TYPE
     | typeof REACT_FRAGMENT_TYPE
     | typeof REACT_PROFILER_TYPE
     | typeof REACT_STRICT_MODE_TYPE,

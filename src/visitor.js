@@ -35,7 +35,6 @@ import {
   REACT_PROFILER_TYPE,
   REACT_PROVIDER_TYPE,
   REACT_CONTEXT_TYPE,
-  REACT_ASYNC_MODE_TYPE,
   REACT_CONCURRENT_MODE_TYPE,
   REACT_FORWARD_REF_TYPE,
   REACT_SUSPENSE_TYPE,
@@ -67,7 +66,6 @@ export const visitElement = (element: AbstractElement): AbstractElement[] => {
   switch (typeOf(element)) {
     case REACT_STRICT_MODE_TYPE:
     case REACT_CONCURRENT_MODE_TYPE:
-    case REACT_ASYNC_MODE_TYPE:
     case REACT_PROFILER_TYPE:
     case REACT_FRAGMENT_TYPE: {
       // These element types are simply traversed over but otherwise ignored
