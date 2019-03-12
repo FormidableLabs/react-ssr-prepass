@@ -4,7 +4,6 @@ import { type Node } from 'react'
 
 import {
   typeOf,
-  shouldConstruct,
   type AbstractElement,
   type ConsumerElement,
   type ProviderElement,
@@ -23,8 +22,7 @@ import {
   type ContextMap
 } from './state'
 
-import { renderClassComponent, renderFunctionComponent } from './render'
-
+import { render } from './render'
 import { getChildrenArray } from './children'
 
 import {
@@ -41,21 +39,6 @@ import {
   REACT_MEMO_TYPE,
   REACT_LAZY_TYPE
 } from './symbols'
-
-const computeProps = (props: mixed, defaultProps: void | Object) =>
-  typeof defaultProps === 'object'
-    ? Object.assign({}, defaultProps, props)
-    : props
-
-const visitComponent = (
-  Component: $PropertyType<UserElement, 'type'>,
-  props: mixed
-): Node => {
-  const context = maskContext(Component)
-  return !shouldConstruct(Component)
-    ? renderFunctionComponent(Component, props, context)
-    : renderClassComponent(Component, props, context)
-}
 
 export const visitElement = (element: AbstractElement): AbstractElement[] => {
   switch (typeOf(element)) {
@@ -105,30 +88,21 @@ export const visitElement = (element: AbstractElement): AbstractElement[] => {
     }
 
     case REACT_FORWARD_REF_TYPE: {
-      const forwardRefElement = ((element: any): ForwardRefElement)
-      const Component = forwardRefElement.type.render
-      const props = computeProps(
-        forwardRefElement.props,
-        Component.defaultProps
-      )
-      const context = maskContext(Component)
-      return getChildrenArray(
-        renderFunctionComponent(Component, props, context)
-      )
+      const refElement = ((element: any): ForwardRefElement)
+      const type = refElement.type.render
+      return getChildrenArray(render(type, refElement.props))
     }
 
     case REACT_MEMO_TYPE: {
       const memoElement = ((element: any): MemoElement)
-      const Component = memoElement.type.type
-      const props = computeProps(memoElement.props, Component.defaultProps)
-      return getChildrenArray(visitComponent(Component, props))
+      const type = memoElement.type.type
+      return getChildrenArray(render(type, memoElement.props))
     }
 
     case REACT_ELEMENT_TYPE: {
       const userElement = ((element: any): UserElement)
-      const Component = userElement.type
-      const props = computeProps(userElement.props, Component.defaultProps)
-      return getChildrenArray(visitComponent(Component, props))
+      const type = userElement.type
+      return getChildrenArray(render(type, userElement.props))
     }
 
     default:

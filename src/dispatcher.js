@@ -19,7 +19,7 @@ type UpdateQueue<A> = {
   dispatch: any
 }
 
-type Hook = {
+export type Hook = {
   memoizedState: any,
   queue: UpdateQueue<any> | null,
   next: Hook | null

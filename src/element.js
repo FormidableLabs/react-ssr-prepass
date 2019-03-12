@@ -20,11 +20,11 @@ import {
   REACT_LAZY_TYPE
 } from './symbols'
 
-type DefaultProps = {
+export type DefaultProps = {
   children?: Node
 }
 
-type ComponentStatics = {
+export type ComponentStatics = {
   getDerivedStateFromProps?: (props: Object, state: mixed) => mixed,
   contextType?: AbstractContext,
   contextTypes?: Object,
