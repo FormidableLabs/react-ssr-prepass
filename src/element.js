@@ -1,6 +1,7 @@
 // @flow
 
 import type { Node, Element, Context, ComponentType } from 'react'
+import type { AbstractContext } from './types'
 import * as ReactIs from 'react-is'
 
 import {
@@ -23,15 +24,24 @@ import {
 type ConsumerProps = { children?: (value: mixed) => Node }
 type ProviderProps = { value: mixed, children?: Node }
 type DefaultProps = { children?: Node }
+type ContextStatics = { _context: AbstractContext }
+
+type ComponentStatics = {
+  getDerivedStateFromProps?: (props: Object, state: mixed) => mixed,
+  contextType?: AbstractContext,
+  contextTypes?: Object,
+  childContextTypes?: Object,
+  defaultProps?: Object
+}
 
 /** <Context.Consumer> */
 export type ConsumerElement = Element<
-  ComponentType<ConsumerProps> & { _context: Context<any> }
+  ComponentType<ConsumerProps> & ContextStatics
 > & { $$typeof: typeof REACT_CONTEXT_TYPE }
 
 /** <Context.Provider> */
 export type ProviderElement = Element<
-  ComponentType<ProviderProps> & { _context: Context<any> }
+  ComponentType<ProviderProps> & ContextStatics
 > & { $$typeof: typeof REACT_PROVIDER_TYPE }
 
 /** <ConcurrentMode>, <Fragment>, <Profiler>, <StrictMode>, <Suspense> */
@@ -53,14 +63,23 @@ export type LazyElement = {
   props: DefaultProps
 }
 
-/** <React.memo(Comp)>, <Portal> */
+/** <React.memo(Comp)>, <React.forwardRef(Comp)>, <Portal> */
 export type VirtualElement = {
-  $$typeof: typeof REACT_MEMO_TYPE | typeof REACT_PORTAL_TYPE,
+  type: {
+    type: ComponentType<DefaultProps> & ComponentStatics,
+    $$typeof:
+      | typeof REACT_MEMO_TYPE
+      | typeof REACT_PORTAL_TYPE
+      | typeof REACT_FORWARD_REF_TYPE
+  },
+  $$typeof: typeof REACT_ELEMENT_TYPE,
   props: DefaultProps
 }
 
 /** Normal Elements: <YourComponent>, <div>, ... */
-export type UserElement = Element<ComponentType<DefaultProps>> & {
+export type UserElement = Element<
+  ComponentType<DefaultProps> & ComponentStatics
+> & {
   $$typeof: typeof REACT_ELEMENT_TYPE
 }
 
@@ -80,3 +99,7 @@ export const toAbstract = (node: Element<any>): AbstractElement => {
 
 /** Determine the type of element using react-is */
 export const typeOf: (x: AbstractElement) => ReactSymbol | void = ReactIs.typeOf
+
+/** Is a given Component a class component */
+export const shouldConstruct = (Comp: ComponentType<*>): boolean %checks =>
+  (Comp: any).prototype && (Comp: any).prototype.isReactComponent

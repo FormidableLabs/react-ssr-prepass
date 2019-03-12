@@ -1,12 +1,7 @@
 // @flow
 // Source: https://github.com/facebook/react/blob/c21c41e/packages/react-dom/src/server/ReactPartialRendererHooks.js
 
-import type {
-  Dispatcher as DispatcherType,
-  AbstractContext,
-  BasicStateAction,
-  Dispatch
-} from './types'
+import type { AbstractContext, BasicStateAction, Dispatch } from './types'
 
 import invariant from 'invariant'
 import warning from 'warning'
@@ -99,14 +94,12 @@ function createWorkInProgressHook(): Hook {
   return workInProgressHook
 }
 
-export function finishHooks(
+export function renderWithHooks(
   Component: any,
   props: any,
-  children: any,
   refOrContext: any
 ): any {
-  // This must be called after every function component to prevent hooks from
-  // being used in classes.
+  let children = Component(props, refOrContext)
 
   while (didScheduleRenderPhaseUpdate) {
     // Updates were scheduled during the render phase. They are stored in
@@ -115,10 +108,8 @@ export function finishHooks(
     // restarting until no more updates are scheduled.
     didScheduleRenderPhaseUpdate = false
     numberOfReRenders += 1
-
     // Start over from the beginning of the list
     workInProgressHook = null
-
     children = Component(props, refOrContext)
   }
 
@@ -126,14 +117,6 @@ export function finishHooks(
   numberOfReRenders = 0
   renderPhaseUpdates = null
   workInProgressHook = null
-
-  // These were reset above
-  // currentlyRenderingComponent = null;
-  // didScheduleRenderPhaseUpdate = false;
-  // firstWorkInProgressHook = null;
-  // numberOfReRenders = 0;
-  // renderPhaseUpdates = null;
-  // workInProgressHook = null;
 
   return children
 }
@@ -313,7 +296,7 @@ function useCallback<T>(callback: T, deps: Array<mixed> | void | null): T {
 
 function noop(): void {}
 
-export const Dispatcher: DispatcherType = {
+export const Dispatcher = {
   readContext,
   useContext,
   useMemo,

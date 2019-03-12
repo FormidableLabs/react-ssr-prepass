@@ -1,6 +1,7 @@
 // @flow
 
 import type { AbstractContext } from './types'
+import type { UserElement } from './element'
 
 import invariant from 'invariant'
 import warning from 'warning'
@@ -51,12 +52,28 @@ export const readContextMap = (context: string | AbstractContext) => {
   return context._currentValue
 }
 
-export const forkContextMap = (
-  context: string | AbstractContext,
-  value: mixed
-): ContextMap => {
+export const forkContextMap = (): ContextMap => {
   // Create cloned ContextMap of currentContextMap
   const newContextMap: ContextMap = new Map(currentContextMap)
-  newContextMap.set(context, value)
+  setCurrentContextMap(newContextMap)
   return newContextMap
+}
+
+const emptyContext = {}
+
+export const maskContext = (type: $PropertyType<UserElement, 'type'>) => {
+  const { contextType, contextTypes } = type
+
+  if (contextType) {
+    return readContextMap(contextType)
+  } else if (!contextTypes) {
+    return emptyContext
+  }
+
+  const maskedContext = {}
+  for (const name in contextTypes) {
+    maskedContext[name] = readContextMap(name)
+  }
+
+  return maskedContext
 }
