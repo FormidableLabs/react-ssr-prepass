@@ -8,6 +8,8 @@ import {
   type AbstractElement,
   type ConsumerElement,
   type ProviderElement,
+  type SystemElement,
+  type SuspenseElement,
   type VirtualElement,
   type UserElement
 } from './element'
@@ -60,37 +62,41 @@ const visitComponent = (
   }
 }
 
-export const visitElement = (element: AbstractElement) => {
+export const visitElement = (element: AbstractElement): AbstractElement[] => {
   switch (typeOf(element)) {
-    case REACT_PORTAL_TYPE: {
-      // These element types are unsupported and will not be traversed
-      return
-    }
-
     case REACT_STRICT_MODE_TYPE:
     case REACT_CONCURRENT_MODE_TYPE:
     case REACT_ASYNC_MODE_TYPE:
     case REACT_PROFILER_TYPE:
     case REACT_FRAGMENT_TYPE: {
       // These element types are simply traversed over but otherwise ignored
-      return getChildrenArray((element.props: any).children)
+      // $FlowFixMe
+      const systemElement = (element: SystemElement)
+      return getChildrenArray(systemElement.props.children)
+    }
+
+    case REACT_PORTAL_TYPE: {
+      // These element types are unsupported and will not be traversed
+      return []
     }
 
     case REACT_SUSPENSE_TYPE: {
       // TODO: Store fallback and watch for thrown promise
-      return getChildrenArray((element.props: any).children)
+      // $FlowFixMe
+      const suspenseElement = (element: SuspenseElement)
+      return getChildrenArray(suspenseElement.props.children)
     }
 
     case REACT_LAZY_TYPE: {
       // TODO: Execute promise and await it
-      return
+      return []
     }
 
     case REACT_PROVIDER_TYPE: {
       // $FlowFixMe
       const providerElement = (element: ProviderElement)
       const newContextMap = forkContextMap()
-      const value = (providerElement.props: any).value
+      const { value } = providerElement.props
       newContextMap.set(providerElement.type._context, value)
       return getChildrenArray(providerElement)
     }
@@ -98,10 +104,10 @@ export const visitElement = (element: AbstractElement) => {
     case REACT_CONTEXT_TYPE: {
       // $FlowFixMe
       const consumerElement = (element: ConsumerElement)
-      const children = (consumerElement.props: any).children
+      const { children } = consumerElement.props
 
       if (typeof children === 'function') {
-        const value = readContextMap(consumerElement.type._context)
+        const value = readContextMap(consumerElement.type)
         return getChildrenArray(children(value))
       } else {
         return []

@@ -1,6 +1,6 @@
 // @flow
 
-import type { Context, Ref } from 'react'
+import type { Context } from 'react'
 
 export type AbstractContext = Context<mixed> & {
   _currentValue: mixed,

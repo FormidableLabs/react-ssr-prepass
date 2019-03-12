@@ -21,10 +21,9 @@ import {
   REACT_LAZY_TYPE
 } from './symbols'
 
-type ConsumerProps = { children?: (value: mixed) => Node }
-type ProviderProps = { value: mixed, children?: Node }
-type DefaultProps = { children?: Node }
-type ContextStatics = { _context: AbstractContext }
+type DefaultProps = {
+  children?: Node
+}
 
 type ComponentStatics = {
   getDerivedStateFromProps?: (props: Object, state: mixed) => mixed,
@@ -35,35 +34,53 @@ type ComponentStatics = {
 }
 
 /** <Context.Consumer> */
-export type ConsumerElement = Element<
-  ComponentType<ConsumerProps> & ContextStatics
-> & { $$typeof: typeof REACT_CONTEXT_TYPE }
+export type ConsumerElement = {
+  type: AbstractContext,
+  props: { children?: (value: mixed) => Node },
+  $$typeof: typeof REACT_ELEMENT_TYPE
+}
 
 /** <Context.Provider> */
-export type ProviderElement = Element<
-  ComponentType<ProviderProps> & ContextStatics
-> & { $$typeof: typeof REACT_PROVIDER_TYPE }
+export type ProviderElement = {
+  type: {
+    $$typeof: typeof REACT_PROVIDER_TYPE,
+    _context: AbstractContext
+  },
+  props: DefaultProps & { value: mixed },
+  $$typeof: typeof REACT_ELEMENT_TYPE
+}
 
-/** <ConcurrentMode>, <Fragment>, <Profiler>, <StrictMode>, <Suspense> */
+/** <Suspense> */
+export type SuspenseElement = {
+  type: typeof REACT_SUSPENSE_TYPE,
+  props: DefaultProps & { fallback?: Node },
+  $$typeof: typeof REACT_ELEMENT_TYPE
+}
+
+/** <ConcurrentMode>, <Fragment>, <Profiler>, <StrictMode> */
 export type SystemElement = {
   type:
     | typeof REACT_CONCURRENT_MODE_TYPE
     | typeof REACT_ASYNC_MODE_TYPE
     | typeof REACT_FRAGMENT_TYPE
     | typeof REACT_PROFILER_TYPE
-    | typeof REACT_STRICT_MODE_TYPE
-    | typeof REACT_SUSPENSE_TYPE,
-  $$typeof: typeof REACT_ELEMENT_TYPE,
-  props: DefaultProps
+    | typeof REACT_STRICT_MODE_TYPE,
+  props: DefaultProps,
+  $$typeof: typeof REACT_ELEMENT_TYPE
 }
 
 /** <React.lazy(Comp)> */
 export type LazyElement = {
   $$typeof: typeof REACT_LAZY_TYPE,
-  props: DefaultProps
+  props: DefaultProps,
+  type: {
+    _ctor: () => Promise<{ default: mixed }>,
+    _status: 0 | 1 | 2,
+    _result: any
+  }
 }
 
-/** <React.memo(Comp)>, <React.forwardRef(Comp)>, <Portal> */
+/** <React.memo(Comp)>, <React.forwardRef(Comp)> */
 export type VirtualElement = {
   type: {
     type: ComponentType<DefaultProps> & ComponentStatics,
@@ -72,14 +89,21 @@ export type VirtualElement = {
       | typeof REACT_PORTAL_TYPE
       | typeof REACT_FORWARD_REF_TYPE
   },
-  $$typeof: typeof REACT_ELEMENT_TYPE,
-  props: DefaultProps
+  props: DefaultProps,
+  $$typeof: typeof REACT_ELEMENT_TYPE
+}
+
+/** Portal */
+export type PortalElement = {
+  $$typeof: typeof REACT_PORTAL_TYPE,
+  containerInfo: any,
+  children: Node
 }
 
 /** Normal Elements: <YourComponent>, <div>, ... */
-export type UserElement = Element<
-  ComponentType<DefaultProps> & ComponentStatics
-> & {
+export type UserElement = {
+  type: ComponentType<DefaultProps> & ComponentStatics,
+  props: DefaultProps,
   $$typeof: typeof REACT_ELEMENT_TYPE
 }
 
@@ -91,6 +115,8 @@ export type AbstractElement =
   | LazyElement
   | VirtualElement
   | UserElement
+  | PortalElement
+  | SuspenseElement
 
 /** Cast an React.Element type to AbstractElement */
 export const toAbstract = (node: Element<any>): AbstractElement => {
