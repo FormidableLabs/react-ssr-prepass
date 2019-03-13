@@ -4,7 +4,6 @@
 import type { AbstractContext, BasicStateAction, Dispatch } from './types'
 
 import invariant from 'invariant'
-import warning from 'warning'
 import is from 'object-is'
 
 import { getCurrentIdentity, readContextMap, type Identity } from './state'

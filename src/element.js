@@ -1,6 +1,6 @@
 // @flow
 
-import type { Node, Element, Context, ComponentType } from 'react'
+import type { Node, Element, ComponentType } from 'react'
 import type { AbstractContext } from './types'
 import * as ReactIs from 'react-is'
 

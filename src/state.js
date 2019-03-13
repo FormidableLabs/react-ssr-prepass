@@ -4,7 +4,6 @@ import type { AbstractContext } from './types'
 import type { UserElement } from './element'
 
 import invariant from 'invariant'
-import warning from 'warning'
 
 export opaque type Identity = {}
 export type ContextMap = Map<string | AbstractContext, mixed>
