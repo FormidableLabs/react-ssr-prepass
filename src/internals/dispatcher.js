@@ -1,28 +1,18 @@
 // @flow
 // Source: https://github.com/facebook/react/blob/c21c41e/packages/react-dom/src/server/ReactPartialRendererHooks.js
 
-import type { AbstractContext, BasicStateAction, Dispatch } from './types'
-
 import invariant from 'invariant'
 import is from 'object-is'
+import { getCurrentIdentity, readContextMap, type Identity } from '../internals'
 
-import { getCurrentIdentity, readContextMap, type Identity } from './state'
-
-type Update<A> = {
-  action: A,
-  next: Update<A> | null
-}
-
-type UpdateQueue<A> = {
-  last: Update<A> | null,
-  dispatch: any
-}
-
-export type Hook = {
-  memoizedState: any,
-  queue: UpdateQueue<any> | null,
-  next: Hook | null
-}
+import type {
+  AbstractContext,
+  BasicStateAction,
+  Dispatch,
+  Update,
+  UpdateQueue,
+  Hook
+} from '../types'
 
 let firstWorkInProgressHook: Hook | null = null
 let workInProgressHook: Hook | null = null

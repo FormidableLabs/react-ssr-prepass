@@ -1,26 +1,28 @@
 // @flow
 
 import type { Node, ComponentType } from 'react'
-import type { Frame, HooksFrame } from './types'
-import type { DefaultProps, ComponentStatics } from '../element'
-import { computeProps } from './utils'
+import { computeProps } from '../element'
+
+import type {
+  Hook,
+  Frame,
+  HooksFrame,
+  DefaultProps,
+  ComponentStatics
+} from '../types'
 
 import {
+  type Identity,
   maskContext,
   makeIdentity,
   setCurrentIdentity,
   setCurrentContextMap,
   getCurrentIdentity,
   getCurrentContextMap,
-  type Identity
-} from '../state'
-
-import {
   renderWithHooks,
   setFirstHook,
-  getFirstHook,
-  type Hook
-} from '../dispatcher'
+  getFirstHook
+} from '../internals'
 
 const render = (
   type: ComponentType<DefaultProps> & ComponentStatics,

@@ -1,12 +1,10 @@
 // @flow
 
-import type { AbstractContext } from './types'
-import type { UserElement } from './element'
-
 import invariant from 'invariant'
 
+import type { AbstractContext, UserElement, ContextMap } from '../types'
+
 export opaque type Identity = {}
-export type ContextMap = Map<string | AbstractContext, mixed>
 
 let currentIdentity: Identity | null = null
 let currentContextMap: ContextMap = new Map()

@@ -1,7 +1,5 @@
 // @flow
 
-export type { Frame } from './types'
-
 export {
   mount as mountFunctionComponent,
   update as updateFunctionComponent

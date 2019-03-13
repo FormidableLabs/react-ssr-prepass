@@ -6,6 +6,10 @@
   "source": "src/index.js",
   "author": "Phil Plückthun <phil@kitten.sh>",
   "license": "MIT",
+  "files": [
+    "index.js",
+    "dist"
+  ],
   "scripts": {
     "build:prod": "microbundle --target node -f cjs --compress --globals '__DEV__=false' -o dist/react-ssr-prepass.production.min.js",
     "build:dev": "microbundle --target node -f cjs --no-compress --globals '__DEV__=false' -o dist/react-ssr-prepass.development.js",
@@ -19,6 +23,7 @@
   },
   "lint-staged": {
     "*.{json,md,js}": [
+      "flow check",
       "prettier --write",
       "git add"
     ]

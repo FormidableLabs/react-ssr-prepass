@@ -1,18 +1,21 @@
 // @flow
 
 import type { Node, ComponentType } from 'react'
-import type { Frame, ClassFrame } from './types'
-import type { DefaultProps, ComponentStatics } from '../element'
-import { computeProps } from './utils'
+import type {
+  Frame,
+  ClassFrame,
+  DefaultProps,
+  ComponentStatics
+} from '../types'
+import { computeProps } from '../element'
 
 import {
   maskContext,
   forkContextMap,
   setCurrentIdentity,
   setCurrentContextMap,
-  getCurrentContextMap,
-  type Identity
-} from '../state'
+  getCurrentContextMap
+} from '../internals'
 
 const createUpdater = () => {
   const queue = []

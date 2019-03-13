@@ -1,33 +1,20 @@
 // @flow
 
 import React, { type Node, type Element } from 'react'
-import type { AbstractElement } from './element'
-import { visitElement } from './visitor'
-import { getChildrenArray } from './children'
-import { setCurrentContextMap, getCurrentContextMap } from './state'
-import { Dispatcher } from './dispatcher'
+import type { Frame, AbstractElement } from './types'
+import { visitChildren } from './visitor'
+import { getChildrenArray } from './element'
+import { updateFunctionComponent, updateClassComponent } from './render'
 
 import {
-  updateFunctionComponent,
-  updateClassComponent,
-  type Frame
-} from './render'
+  setCurrentContextMap,
+  getCurrentContextMap,
+  Dispatcher
+} from './internals'
 
 const {
   ReactCurrentDispatcher
 } = (React: any).__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED
-
-const visitChildren = (children: AbstractElement[], queue: Frame[]) => {
-  if (children.length === 1) {
-    visitChildren(visitElement(children[0], queue), queue)
-  } else if (children.length > 1) {
-    const contextMap = getCurrentContextMap()
-    for (let i = 0, l = children.length; i < l; i++) {
-      visitChildren(visitElement(children[i], queue), queue)
-      setCurrentContextMap(contextMap)
-    }
-  }
-}
 
 const visit = (children: AbstractElement[], queue: Frame[]) => {
   const prevDispatcher = ReactCurrentDispatcher.current

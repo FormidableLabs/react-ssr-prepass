@@ -1,9 +1,9 @@
 // @flow
 
 import type { ComponentType } from 'react'
-import type { DefaultProps, ComponentStatics } from '../element'
-import type { Identity, ContextMap } from '../state'
-import type { Hook } from '../dispatcher'
+import type { Identity } from '../internals'
+import type { DefaultProps, ComponentStatics } from './element'
+import type { ContextMap, Hook } from './state'
 
 export type BaseFrame = {
   type: ComponentType<DefaultProps> & ComponentStatics,

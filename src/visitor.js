@@ -1,36 +1,31 @@
 // @flow
 
 import type { Node, ComponentType } from 'react'
-import { getChildrenArray } from './children'
+import { typeOf, shouldConstruct, getChildrenArray } from './element'
+import { mountFunctionComponent, mountClassComponent } from './render'
 
-import {
-  typeOf,
-  shouldConstruct,
-  type DefaultProps,
-  type ComponentStatics,
-  type AbstractElement,
-  type ConsumerElement,
-  type ProviderElement,
-  type FragmentElement,
-  type SuspenseElement,
-  type ForwardRefElement,
-  type MemoElement,
-  type UserElement
-} from './element'
+import type {
+  Frame,
+  ContextMap,
+  DefaultProps,
+  ComponentStatics,
+  AbstractElement,
+  ConsumerElement,
+  ProviderElement,
+  FragmentElement,
+  SuspenseElement,
+  ForwardRefElement,
+  MemoElement,
+  UserElement
+} from './types'
 
 import {
   maskContext,
+  getCurrentContextMap,
   setCurrentContextMap,
   readContextMap,
-  forkContextMap,
-  type ContextMap
-} from './state'
-
-import {
-  mountFunctionComponent,
-  mountClassComponent,
-  type Frame
-} from './render'
+  forkContextMap
+} from './internals'
 
 import {
   REACT_ELEMENT_TYPE,
@@ -62,29 +57,16 @@ export const visitElement = (
   queue: Frame[]
 ): AbstractElement[] => {
   switch (typeOf(element)) {
+    case REACT_SUSPENSE_TYPE:
     case REACT_STRICT_MODE_TYPE:
     case REACT_CONCURRENT_MODE_TYPE:
     case REACT_PROFILER_TYPE:
     case REACT_FRAGMENT_TYPE: {
       // These element types are simply traversed over but otherwise ignored
-      const fragmentElement = ((element: any): FragmentElement)
+      const fragmentElement = ((element: any):
+        | FragmentElement
+        | SuspenseElement)
       return getChildrenArray(fragmentElement.props.children)
-    }
-
-    case REACT_PORTAL_TYPE: {
-      // These element types are unsupported and will not be traversed
-      return []
-    }
-
-    case REACT_LAZY_TYPE: {
-      // TODO: Execute promise and await it
-      return []
-    }
-
-    case REACT_SUSPENSE_TYPE: {
-      // TODO: Store fallback and watch for thrown promise
-      const suspenseElement = ((element: any): SuspenseElement)
-      return getChildrenArray(suspenseElement.props.children)
     }
 
     case REACT_PROVIDER_TYPE: {
@@ -107,6 +89,11 @@ export const visitElement = (
       }
     }
 
+    case REACT_LAZY_TYPE: {
+      // TODO: Execute promise and await it
+      return []
+    }
+
     case REACT_FORWARD_REF_TYPE: {
       const refElement = ((element: any): ForwardRefElement)
       const type = refElement.type.render
@@ -126,7 +113,21 @@ export const visitElement = (
       return getChildrenArray(render(type, userElement.props, queue))
     }
 
+    case REACT_PORTAL_TYPE:
+    // Portals are unsupported during SSR since they're DOM-only
     default:
       return []
+  }
+}
+
+export const visitChildren = (children: AbstractElement[], queue: Frame[]) => {
+  if (children.length === 1) {
+    visitChildren(visitElement(children[0], queue), queue)
+  } else if (children.length > 1) {
+    const contextMap = getCurrentContextMap()
+    for (let i = 0, l = children.length; i < l; i++) {
+      visitChildren(visitElement(children[i], queue), queue)
+      setCurrentContextMap(contextMap)
+    }
   }
 }
