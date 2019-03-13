@@ -1,6 +1,11 @@
 // @flow
 
 export {
+  mount as mountLazyComponent,
+  update as updateLazyComponent
+} from './lazyComponent'
+
+export {
   mount as mountFunctionComponent,
   update as updateFunctionComponent
 } from './functionComponent'

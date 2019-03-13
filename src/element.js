@@ -27,11 +27,8 @@ export const shouldConstruct = (Comp: ComponentType<*>): boolean %checks =>
 /** Determine the type of element using react-is with applied fixes */
 export const typeOf = (x: AbstractElement): ReactSymbol | void => {
   switch (x.$$typeof) {
-    case REACT_LAZY_TYPE:
-      return REACT_LAZY_TYPE
     case REACT_PORTAL_TYPE:
       return REACT_PORTAL_TYPE
-
     case REACT_ELEMENT_TYPE:
       switch (x.type) {
         case REACT_CONCURRENT_MODE_TYPE:
@@ -47,6 +44,8 @@ export const typeOf = (x: AbstractElement): ReactSymbol | void => {
 
         default: {
           switch (x.type && ((x.type: any).$$typeof: ReactSymbol)) {
+            case REACT_LAZY_TYPE:
+              return REACT_LAZY_TYPE
             case REACT_MEMO_TYPE:
               return REACT_MEMO_TYPE
             case REACT_CONTEXT_TYPE:

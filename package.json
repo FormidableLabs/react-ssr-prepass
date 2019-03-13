@@ -22,8 +22,12 @@
     "trailingComma": "none"
   },
   "lint-staged": {
-    "*.{json,md,js}": [
-      "flow check",
+    "*.{js}": [
+      "flow focus-check",
+      "prettier --write",
+      "git add"
+    ],
+    "*.{json,md}": [
       "prettier --write",
       "git add"
     ]

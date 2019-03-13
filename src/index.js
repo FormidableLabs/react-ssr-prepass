@@ -4,7 +4,12 @@ import React, { type Node, type Element } from 'react'
 import type { Frame, AbstractElement } from './types'
 import { visitChildren } from './visitor'
 import { getChildrenArray } from './element'
-import { updateFunctionComponent, updateClassComponent } from './render'
+
+import {
+  updateFunctionComponent,
+  updateClassComponent,
+  updateLazyComponent
+} from './render'
 
 import {
   setCurrentContextMap,
@@ -36,6 +41,8 @@ const flushFrames = (queue: Frame[]): Promise<void> => {
       children = getChildrenArray(updateClassComponent(queue, frame))
     } else if (frame.kind === 'frame.hooks') {
       children = getChildrenArray(updateFunctionComponent(queue, frame))
+    } else if (frame.kind === 'frame.lazy') {
+      children = getChildrenArray(updateLazyComponent(queue, frame))
     }
 
     visit(children, queue)

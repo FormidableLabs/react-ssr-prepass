@@ -70,15 +70,18 @@ export type FragmentElement = {
   $$typeof: typeof REACT_ELEMENT_TYPE
 }
 
+export type LazyComponent = {
+  $$typeof: typeof REACT_LAZY_TYPE,
+  _ctor: () => Promise<any>,
+  _status: -1 | 0 | 1 | 2,
+  _result: any
+}
+
 /** <React.lazy(Comp)> */
 export type LazyElement = {
   $$typeof: typeof REACT_LAZY_TYPE,
   props: DefaultProps,
-  type: {
-    _ctor: () => Promise<{ default: mixed }>,
-    _status: 0 | 1 | 2,
-    _result: any
-  }
+  type: LazyComponent
 }
 
 /** <React.memo(Comp)>,  */

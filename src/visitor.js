@@ -2,13 +2,19 @@
 
 import type { Node, ComponentType } from 'react'
 import { typeOf, shouldConstruct, getChildrenArray } from './element'
-import { mountFunctionComponent, mountClassComponent } from './render'
+
+import {
+  mountFunctionComponent,
+  mountClassComponent,
+  mountLazyComponent
+} from './render'
 
 import type {
   Frame,
   ContextMap,
   DefaultProps,
   ComponentStatics,
+  LazyElement,
   AbstractElement,
   ConsumerElement,
   ProviderElement,
@@ -90,8 +96,10 @@ export const visitElement = (
     }
 
     case REACT_LAZY_TYPE: {
-      // TODO: Execute promise and await it
-      return []
+      const lazyElement = ((element: any): LazyElement)
+      const type = lazyElement.type
+      const child = mountLazyComponent(type, lazyElement.props, queue)
+      return getChildrenArray(child)
     }
 
     case REACT_FORWARD_REF_TYPE: {

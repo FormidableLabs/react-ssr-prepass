@@ -108,7 +108,6 @@ const render = (type: any, instance: any, queue: Frame[]) => {
       thenable: error,
       kind: 'frame.class',
       instance,
-      props: instance.props,
       type
     })
 
