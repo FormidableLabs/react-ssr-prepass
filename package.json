@@ -8,11 +8,12 @@
   "license": "MIT",
   "files": [
     "index.js",
+    "index.js.flow",
     "dist"
   ],
   "scripts": {
     "build:prod": "microbundle --target node -f cjs --compress --globals '__DEV__=false' -o dist/react-ssr-prepass.production.min.js",
-    "build:dev": "microbundle --target node -f cjs --no-compress --globals '__DEV__=false' -o dist/react-ssr-prepass.development.js",
+    "build:dev": "microbundle --target node -f cjs --no-compress --globals '__DEV__=true' -o dist/react-ssr-prepass.development.js",
     "build": "run-p build:prod build:dev",
     "flow": "flow"
   },
@@ -44,6 +45,7 @@
   "devDependencies": {
     "flow-bin": "^0.94.0",
     "husky": "^1.3.1",
+    "jest": "^24.5.0",
     "lint-staged": "^8.1.5",
     "microbundle": "^0.11.0",
     "npm-run-all": "^4.1.5",
