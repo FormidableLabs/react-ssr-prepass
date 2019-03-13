@@ -124,11 +124,6 @@ export type AbstractElement =
   | PortalElement
   | SuspenseElement
 
-/** Cast an React.Element type to AbstractElement */
-export const toAbstract = (node: Element<any>): AbstractElement => {
-  return ((node: any): AbstractElement)
-}
-
 /** Is a given Component a class component */
 export const shouldConstruct = (Comp: ComponentType<*>): boolean %checks =>
   (Comp: any).prototype && (Comp: any).prototype.isReactComponent
@@ -154,7 +149,7 @@ export const typeOf = (x: AbstractElement): ReactSymbol | void => {
         case REACT_SUSPENSE_TYPE:
           return REACT_SUSPENSE_TYPE
 
-        default:
+        default: {
           switch (x.type && ((x.type: any).$$typeof: ReactSymbol)) {
             case REACT_MEMO_TYPE:
               return REACT_MEMO_TYPE
@@ -167,6 +162,7 @@ export const typeOf = (x: AbstractElement): ReactSymbol | void => {
             default:
               return REACT_ELEMENT_TYPE
           }
+        }
       }
 
     default:

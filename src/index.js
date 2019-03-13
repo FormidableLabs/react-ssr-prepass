@@ -1,7 +1,7 @@
 // @flow
 
 import React, { type Node, type Element } from 'react'
-import { toAbstract, type AbstractElement } from './element'
+import type { AbstractElement } from './element'
 import { visitElement } from './visitor'
 import { getChildrenArray } from './children'
 import { setCurrentContextMap, getCurrentContextMap } from './state'
@@ -56,9 +56,9 @@ const flushFrames = (queue: Frame[]): Promise<void> => {
   })
 }
 
-const renderPrepass = (element: Element<any>): Promise<void> => {
+const renderPrepass = (element: Node): Promise<void> => {
   const queue: Frame[] = []
-  visit([toAbstract(element)], queue)
+  visit(getChildrenArray(element), queue)
   return flushFrames(queue)
 }
 

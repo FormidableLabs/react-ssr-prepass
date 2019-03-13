@@ -18,18 +18,16 @@ export type ReactSymbol =
   | 'react.memo' /* 0xead3 | Symbol(react.memo) */
   | 'react.lazy' /* 0xead4 | Symbol(react.lazy) */
 
-export const REACT_ELEMENT_TYPE: 'react.element' = ReactIs.REACT_ELEMENT_TYPE
-export const REACT_PORTAL_TYPE: 'react.portal' = ReactIs.REACT_PORTAL_TYPE
-export const REACT_FRAGMENT_TYPE: 'react.fragment' = ReactIs.REACT_FRAGMENT_TYPE
-export const REACT_STRICT_MODE_TYPE: 'react.strict_mode' =
-  ReactIs.REACT_STRICT_MODE_TYPE
-export const REACT_PROFILER_TYPE: 'react.profiler' = ReactIs.REACT_PROFILER_TYPE
-export const REACT_PROVIDER_TYPE: 'react.provider' = ReactIs.REACT_PROVIDER_TYPE
-export const REACT_CONTEXT_TYPE: 'react.context' = ReactIs.REACT_CONTEXT_TYPE
+export const REACT_ELEMENT_TYPE: 'react.element' = ReactIs.Element
+export const REACT_PORTAL_TYPE: 'react.portal' = ReactIs.Portal
+export const REACT_FRAGMENT_TYPE: 'react.fragment' = ReactIs.Fragment
+export const REACT_STRICT_MODE_TYPE: 'react.strict_mode' = ReactIs.StrictMode
+export const REACT_PROFILER_TYPE: 'react.profiler' = ReactIs.Profiler
+export const REACT_PROVIDER_TYPE: 'react.provider' = ReactIs.ContextProvider
+export const REACT_CONTEXT_TYPE: 'react.context' = ReactIs.ContextConsumer
 export const REACT_CONCURRENT_MODE_TYPE: 'react.concurrent_mode' =
-  ReactIs.REACT_CONCURRENT_MODE_TYPE
-export const REACT_FORWARD_REF_TYPE: 'react.forward_ref' =
-  ReactIs.REACT_FORWARD_REF_TYPE
-export const REACT_SUSPENSE_TYPE: 'react.suspense' = ReactIs.REACT_SUSPENSE_TYPE
-export const REACT_MEMO_TYPE: 'react.memo' = ReactIs.REACT_MEMO_TYPE
-export const REACT_LAZY_TYPE: 'react.lazy' = ReactIs.REACT_LAZY_TYPE
+  ReactIs.ConcurrentMode
+export const REACT_FORWARD_REF_TYPE: 'react.forward_ref' = ReactIs.ForwardRef
+export const REACT_SUSPENSE_TYPE: 'react.suspense' = ReactIs.Suspense
+export const REACT_MEMO_TYPE: 'react.memo' = ReactIs.Memo
+export const REACT_LAZY_TYPE: 'react.lazy' = ReactIs.Lazy

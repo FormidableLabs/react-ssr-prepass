@@ -13,7 +13,8 @@ const toArray: (node?: Node) => Array<ScalarNode | AbstractElement> =
 /** Checks whether the `node` is an AbstractElement */
 const isAbstractElement = (
   node: ScalarNode | AbstractElement
-): boolean %checks => node !== null && typeof node === 'object'
+): boolean %checks =>
+  node !== null && typeof node === 'object' && typeof node.type !== 'string'
 
 /** Returns a flat AbstractElement array for a given AbstractElement node */
 export const getChildrenArray = (node?: Node): AbstractElement[] => {
