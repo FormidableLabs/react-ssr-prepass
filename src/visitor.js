@@ -10,6 +10,7 @@ import {
 } from './render'
 
 import type {
+  Visitor,
   Frame,
   ContextMap,
   DefaultProps,
@@ -51,16 +52,19 @@ import {
 const render = (
   type: ComponentType<DefaultProps> & ComponentStatics,
   props: DefaultProps,
-  queue: Frame[]
+  queue: Frame[],
+  element: null | UserElement,
+  visitor: void | Visitor
 ) => {
   return shouldConstruct(type)
-    ? mountClassComponent(type, props, queue)
-    : mountFunctionComponent(type, props, queue)
+    ? mountClassComponent(type, props, queue, element, visitor)
+    : mountFunctionComponent(type, props, queue, element, visitor)
 }
 
 export const visitElement = (
   element: AbstractElement,
-  queue: Frame[]
+  queue: Frame[],
+  visitor: void | Visitor
 ): AbstractElement[] => {
   switch (typeOf(element)) {
     case REACT_SUSPENSE_TYPE:
@@ -105,20 +109,26 @@ export const visitElement = (
     case REACT_FORWARD_REF_TYPE: {
       const refElement = ((element: any): ForwardRefElement)
       const type = refElement.type.render
-      const child = mountFunctionComponent(type, refElement.props, queue)
+      const props = refElement.props
+      const child = mountFunctionComponent(type, props, queue, null, visitor)
       return getChildrenArray(child)
     }
 
     case REACT_MEMO_TYPE: {
       const memoElement = ((element: any): MemoElement)
       const type = memoElement.type.type
-      return getChildrenArray(render(type, memoElement.props, queue))
+
+      return getChildrenArray(
+        render(type, memoElement.props, queue, null, visitor)
+      )
     }
 
     case REACT_ELEMENT_TYPE: {
       const userElement = ((element: any): UserElement)
       const type = userElement.type
-      return getChildrenArray(render(type, userElement.props, queue))
+      return getChildrenArray(
+        render(type, userElement.props, queue, userElement, visitor)
+      )
     }
 
     case REACT_PORTAL_TYPE:
@@ -128,13 +138,17 @@ export const visitElement = (
   }
 }
 
-export const visitChildren = (children: AbstractElement[], queue: Frame[]) => {
+export const visitChildren = (
+  children: AbstractElement[],
+  queue: Frame[],
+  visitor: void | Visitor
+) => {
   if (children.length === 1) {
-    visitChildren(visitElement(children[0], queue), queue)
+    visitChildren(visitElement(children[0], queue, visitor), queue, visitor)
   } else if (children.length > 1) {
     const contextMap = getCurrentContextMap()
     for (let i = 0, l = children.length; i < l; i++) {
-      visitChildren(visitElement(children[i], queue), queue)
+      visitChildren(visitElement(children[i], queue, visitor), queue, visitor)
       setCurrentContextMap(contextMap)
     }
   }

@@ -1,13 +1,16 @@
 // @flow
 
 import type { Node, ComponentType } from 'react'
+import { computeProps } from '../element'
+
 import type {
+  Visitor,
   Frame,
   ClassFrame,
   DefaultProps,
-  ComponentStatics
+  ComponentStatics,
+  UserElement
 } from '../types'
-import { computeProps } from '../element'
 
 import {
   maskContext,
@@ -93,6 +96,14 @@ const createInstance = (type: any, props: DefaultProps) => {
   return instance
 }
 
+const makeFrame = (type: any, instance: any, thenable: Promise<any>) => ({
+  contextMap: getCurrentContextMap(),
+  thenable,
+  kind: 'frame.class',
+  instance,
+  type
+})
+
 const render = (type: any, instance: any, queue: Frame[]) => {
   let child: Node = null
 
@@ -103,14 +114,7 @@ const render = (type: any, instance: any, queue: Frame[]) => {
       throw error
     }
 
-    queue.push({
-      contextMap: getCurrentContextMap(),
-      thenable: error,
-      kind: 'frame.class',
-      instance,
-      type
-    })
-
+    queue.push(makeFrame(type, instance, error))
     return null
   } finally {
     instance._isMounted = false
@@ -147,10 +151,21 @@ const render = (type: any, instance: any, queue: Frame[]) => {
 export const mount = (
   type: ComponentType<DefaultProps> & ComponentStatics,
   props: DefaultProps,
-  queue: Frame[]
+  queue: Frame[],
+  element: null | UserElement,
+  visitor: void | Visitor
 ) => {
   setCurrentIdentity(null)
   const instance = createInstance(type, props)
+
+  if (visitor !== undefined && element !== null) {
+    const p = visitor(element, instance)
+    if (typeof p === 'object' && p !== null && typeof p.then === 'function') {
+      queue.push(makeFrame(type, instance, p))
+      return null
+    }
+  }
+
   return render(type, instance, queue)
 }
 

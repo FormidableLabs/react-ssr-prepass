@@ -4,11 +4,13 @@ import type { Node, ComponentType } from 'react'
 import { computeProps } from '../element'
 
 import type {
+  Visitor,
   Hook,
   Frame,
   HooksFrame,
   DefaultProps,
-  ComponentStatics
+  ComponentStatics,
+  UserElement
 } from '../types'
 
 import {
@@ -23,6 +25,20 @@ import {
   setFirstHook,
   getFirstHook
 } from '../internals'
+
+const makeFrame = (
+  type: ComponentType<DefaultProps> & ComponentStatics,
+  props: DefaultProps,
+  thenable: Promise<any>
+) => ({
+  contextMap: getCurrentContextMap(),
+  id: getCurrentIdentity(),
+  hook: getFirstHook(),
+  kind: 'frame.hooks',
+  thenable,
+  props,
+  type
+})
 
 const render = (
   type: ComponentType<DefaultProps> & ComponentStatics,
@@ -40,16 +56,7 @@ const render = (
       throw error
     }
 
-    queue.push({
-      contextMap: getCurrentContextMap(),
-      id: getCurrentIdentity(),
-      hook: getFirstHook(),
-      kind: 'frame.hooks',
-      thenable: error,
-      props,
-      type
-    })
-
+    queue.push(makeFrame(type, props, error))
     return null
   } finally {
     setCurrentIdentity(null)
@@ -60,8 +67,18 @@ const render = (
 export const mount = (
   type: ComponentType<DefaultProps> & ComponentStatics,
   props: DefaultProps,
-  queue: Frame[]
+  queue: Frame[],
+  element: null | UserElement,
+  visitor: void | Visitor
 ): Node => {
+  if (visitor !== undefined && element !== null) {
+    const p = visitor(element)
+    if (typeof p === 'object' && p !== null && typeof p.then === 'function') {
+      queue.push(makeFrame(type, props, p))
+      return null
+    }
+  }
+
   setFirstHook(null)
   setCurrentIdentity(makeIdentity())
   return render(type, props, queue)

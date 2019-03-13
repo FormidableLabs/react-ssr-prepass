@@ -1,7 +1,7 @@
 // @flow
 
 import React, { type Node, type Element } from 'react'
-import type { Frame, AbstractElement } from './types'
+import type { Visitor, Frame, AbstractElement } from './types'
 import { visitChildren } from './visitor'
 import { getChildrenArray } from './element'
 
@@ -21,14 +21,14 @@ const {
   ReactCurrentDispatcher
 } = (React: any).__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED
 
-const visit = (children: AbstractElement[], queue: Frame[]) => {
+const visit = (children: AbstractElement[], queue: Frame[], visitor?: Visitor) => {
   const prevDispatcher = ReactCurrentDispatcher.current
   ReactCurrentDispatcher.current = Dispatcher
-  visitChildren(children, queue)
+  visitChildren(children, queue, visitor)
   ReactCurrentDispatcher.current = prevDispatcher
 }
 
-const flushFrames = (queue: Frame[]): Promise<void> => {
+const flushFrames = (queue: Frame[], visitor: void | Visitor): Promise<void> => {
   if (queue.length === 0) {
     return Promise.resolve()
   }
@@ -45,15 +45,15 @@ const flushFrames = (queue: Frame[]): Promise<void> => {
       children = getChildrenArray(updateLazyComponent(queue, frame))
     }
 
-    visit(children, queue)
-    return flushFrames(queue)
+    visit(children, queue, visitor)
+    return flushFrames(queue, visitor)
   })
 }
 
-const renderPrepass = (element: Node): Promise<void> => {
+const renderPrepass = (element: Node, visitor?: Visitor): Promise<void> => {
   const queue: Frame[] = []
-  visit(getChildrenArray(element), queue)
-  return flushFrames(queue)
+  visit(getChildrenArray(element), queue, visitor)
+  return flushFrames(queue, visitor)
 }
 
 export default renderPrepass
