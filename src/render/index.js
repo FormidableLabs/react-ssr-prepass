@@ -1,32 +1,13 @@
 // @flow
 
-import type { Node, ComponentType } from 'react'
+export type { Frame } from './types'
 
-import {
-  shouldConstruct,
-  type UserElement,
-  type DefaultProps,
-  type ComponentStatics
-} from '../element'
+export {
+  mount as mountFunctionComponent,
+  update as updateFunctionComponent
+} from './functionComponent'
 
-import { maskContext } from '../state'
-import { renderClassComponent } from './classComponent'
-import { renderFunctionComponent } from './functionComponent'
-
-const computeProps = (props: Object, defaultProps: void | Object) => {
-  return typeof defaultProps === 'object'
-    ? Object.assign({}, defaultProps, props)
-    : props
-}
-
-export const render = (
-  type: ComponentType<DefaultProps> & ComponentStatics,
-  props: DefaultProps
-): Node => {
-  const computedProps = computeProps(props, type.defaultProps)
-  const context = maskContext(type)
-
-  return !shouldConstruct(type)
-    ? renderFunctionComponent(type, computedProps, context)
-    : renderClassComponent(type, computedProps, context)
-}
+export {
+  mount as mountClassComponent,
+  update as updateClassComponent
+} from './classComponent'

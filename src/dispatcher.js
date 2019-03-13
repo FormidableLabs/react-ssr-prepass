@@ -37,6 +37,12 @@ let renderPhaseUpdates: Map<UpdateQueue<any>, Update<any>> | null = null
 let numberOfReRenders: number = 0
 const RE_RENDER_LIMIT = 25
 
+export const getFirstHook = (): Hook | null => firstWorkInProgressHook
+
+export const setFirstHook = (hook: Hook | null) => {
+  firstWorkInProgressHook = hook
+}
+
 function areHookInputsEqual(
   nextDeps: Array<mixed>,
   prevDeps: Array<mixed> | null
@@ -113,7 +119,9 @@ export function renderWithHooks(
     children = Component(props, refOrContext)
   }
 
-  firstWorkInProgressHook = null
+  // This will be reset by renderer
+  // firstWorkInProgressHook = null
+
   numberOfReRenders = 0
   renderPhaseUpdates = null
   workInProgressHook = null

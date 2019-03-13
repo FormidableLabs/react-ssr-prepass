@@ -1,9 +1,13 @@
 // @flow
 
-import { type Node } from 'react'
+import type { Node, ComponentType } from 'react'
+import { getChildrenArray } from './children'
 
 import {
   typeOf,
+  shouldConstruct,
+  type DefaultProps,
+  type ComponentStatics,
   type AbstractElement,
   type ConsumerElement,
   type ProviderElement,
@@ -22,8 +26,11 @@ import {
   type ContextMap
 } from './state'
 
-import { render } from './render'
-import { getChildrenArray } from './children'
+import {
+  mountFunctionComponent,
+  mountClassComponent,
+  type Frame
+} from './render'
 
 import {
   REACT_ELEMENT_TYPE,
@@ -40,7 +47,20 @@ import {
   REACT_LAZY_TYPE
 } from './symbols'
 
-export const visitElement = (element: AbstractElement): AbstractElement[] => {
+const render = (
+  type: ComponentType<DefaultProps> & ComponentStatics,
+  props: DefaultProps,
+  queue: Frame[]
+) => {
+  return shouldConstruct(type)
+    ? mountClassComponent(type, props, queue)
+    : mountFunctionComponent(type, props, queue)
+}
+
+export const visitElement = (
+  element: AbstractElement,
+  queue: Frame[]
+): AbstractElement[] => {
   switch (typeOf(element)) {
     case REACT_STRICT_MODE_TYPE:
     case REACT_CONCURRENT_MODE_TYPE:
@@ -90,19 +110,20 @@ export const visitElement = (element: AbstractElement): AbstractElement[] => {
     case REACT_FORWARD_REF_TYPE: {
       const refElement = ((element: any): ForwardRefElement)
       const type = refElement.type.render
-      return getChildrenArray(render(type, refElement.props))
+      const child = mountFunctionComponent(type, refElement.props, queue)
+      return getChildrenArray(child)
     }
 
     case REACT_MEMO_TYPE: {
       const memoElement = ((element: any): MemoElement)
       const type = memoElement.type.type
-      return getChildrenArray(render(type, memoElement.props))
+      return getChildrenArray(render(type, memoElement.props, queue))
     }
 
     case REACT_ELEMENT_TYPE: {
       const userElement = ((element: any): UserElement)
       const type = userElement.type
-      return getChildrenArray(render(type, userElement.props))
+      return getChildrenArray(render(type, userElement.props, queue))
     }
 
     default:
