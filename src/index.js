@@ -22,14 +22,14 @@ const {
   ReactCurrentDispatcher
 } = (React: any).__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED
 
-const visit = (children: AbstractElement[], queue: Frame[], visitor?: Visitor) => {
+const visit = (children: AbstractElement[], queue: Frame[], visitor: Visitor) => {
   const prevDispatcher = ReactCurrentDispatcher.current
   ReactCurrentDispatcher.current = Dispatcher
   visitChildren(children, queue, visitor)
   ReactCurrentDispatcher.current = prevDispatcher
 }
 
-const flushFrames = (queue: Frame[], visitor: void | Visitor): Promise<void> => {
+const flushFrames = (queue: Frame[], visitor: Visitor): Promise<void> => {
   if (queue.length === 0) {
     return Promise.resolve()
   }
@@ -51,11 +51,15 @@ const flushFrames = (queue: Frame[], visitor: void | Visitor): Promise<void> => 
   })
 }
 
+const defaultVisitor = () => {};
+
 const renderPrepass = (element: Node, visitor?: Visitor): Promise<void> => {
   const queue: Frame[] = []
+  let fn = visitor !== undefined ? visitor : defaultVisitor
+
   clearCurrentContextMap()
-  visit(getChildrenArray(element), queue, visitor)
-  return flushFrames(queue, visitor)
+  visit(getChildrenArray(element), queue, fn)
+  return flushFrames(queue, fn)
 }
 
 export default renderPrepass

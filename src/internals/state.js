@@ -30,7 +30,7 @@ export const getCurrentIdentity = (): Identity => {
   return (currentIdentity: Identity)
 }
 
-export const clearCurrentContextMap = (map: ContextMap) => {
+export const clearCurrentContextMap = () => {
   currentContextMap = emptyMap
 }
 

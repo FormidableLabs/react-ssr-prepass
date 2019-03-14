@@ -53,18 +53,18 @@ const render = (
   type: ComponentType<DefaultProps> & ComponentStatics,
   props: DefaultProps,
   queue: Frame[],
-  element: null | UserElement,
-  visitor: void | Visitor
+  visitor: Visitor,
+  element?: UserElement
 ) => {
   return shouldConstruct(type)
-    ? mountClassComponent(type, props, queue, element, visitor)
-    : mountFunctionComponent(type, props, queue, element, visitor)
+    ? mountClassComponent(type, props, queue, visitor, element)
+    : mountFunctionComponent(type, props, queue, visitor, element)
 }
 
 export const visitElement = (
   element: AbstractElement,
   queue: Frame[],
-  visitor: void | Visitor
+  visitor: Visitor
 ): AbstractElement[] => {
   switch (typeOf(element)) {
     case REACT_SUSPENSE_TYPE:
@@ -110,7 +110,7 @@ export const visitElement = (
       const refElement = ((element: any): ForwardRefElement)
       const type = refElement.type.render
       const props = refElement.props
-      const child = mountFunctionComponent(type, props, queue, null, visitor)
+      const child = mountFunctionComponent(type, props, queue, visitor)
       return getChildrenArray(child)
     }
 
@@ -119,7 +119,7 @@ export const visitElement = (
       const type = memoElement.type.type
 
       return getChildrenArray(
-        render(type, memoElement.props, queue, null, visitor)
+        render(type, memoElement.props, queue, visitor)
       )
     }
 
@@ -127,7 +127,7 @@ export const visitElement = (
       const userElement = ((element: any): UserElement)
       const type = userElement.type
       return getChildrenArray(
-        render(type, userElement.props, queue, userElement, visitor)
+        render(type, userElement.props, queue, visitor, userElement)
       )
     }
 
@@ -141,7 +141,7 @@ export const visitElement = (
 export const visitChildren = (
   children: AbstractElement[],
   queue: Frame[],
-  visitor: void | Visitor
+  visitor: Visitor
 ) => {
   if (children.length === 1) {
     visitChildren(visitElement(children[0], queue, visitor), queue, visitor)

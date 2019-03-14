@@ -68,10 +68,10 @@ export const mount = (
   type: ComponentType<DefaultProps> & ComponentStatics,
   props: DefaultProps,
   queue: Frame[],
-  element: null | UserElement,
-  visitor: void | Visitor
+  visitor: Visitor,
+  element?: UserElement,
 ): Node => {
-  if (visitor !== undefined && element !== null) {
+  if (element !== undefined) {
     const p = visitor(element)
     if (typeof p === 'object' && p !== null && typeof p.then === 'function') {
       queue.push(makeFrame(type, props, p))
