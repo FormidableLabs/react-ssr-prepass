@@ -92,7 +92,7 @@ export const visitElement = (
       const { children } = consumerElement.props
 
       if (typeof children === 'function') {
-        const value = readContextMap(consumerElement.type)
+        const value = readContextMap(consumerElement.type._context)
         return getChildrenArray(children(value))
       } else {
         return []
