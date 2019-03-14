@@ -1,7 +1,5 @@
 // @flow
 
-import invariant from 'invariant'
-
 import type { AbstractContext, UserElement, ContextMap } from '../types'
 
 export opaque type Identity = {}
@@ -17,11 +15,12 @@ export const setCurrentIdentity = (id: Identity | null) => {
 }
 
 export const getCurrentIdentity = (): Identity => {
-  invariant(
-    currentIdentity !== null,
-    'Hooks can only be called inside the body of a function component. ' +
-      '(https://fb.me/react-invalid-hook-call)'
-  )
+  if (currentIdentity === null) {
+    throw new Error(
+      'Hooks can only be called inside the body of a function component. ' +
+        '(https://fb.me/react-invalid-hook-call)'
+    )
+  }
 
   // NOTE: The warning that is used in ReactPartialRendererHooks is obsolete
   // in a prepass, since it'll be caught by a subsequent renderer anyway

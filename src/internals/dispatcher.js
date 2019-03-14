@@ -1,7 +1,6 @@
 // @flow
 // Source: https://github.com/facebook/react/blob/c21c41e/packages/react-dom/src/server/ReactPartialRendererHooks.js
 
-import invariant from 'invariant'
 import is from 'object-is'
 import { getCurrentIdentity, readContextMap, type Identity } from '../internals'
 
@@ -52,11 +51,6 @@ function areHookInputsEqual(
 }
 
 function createHook(): Hook {
-  invariant(
-    numberOfReRenders > 0,
-    'Rendered more hooks than during the previous render'
-  )
-
   return {
     memoizedState: null,
     queue: null,
@@ -96,7 +90,9 @@ export function renderWithHooks(
 ): any {
   let children = Component(props, refOrContext)
 
-  while (didScheduleRenderPhaseUpdate) {
+  // NOTE: Excessive rerenders won't throw but will instead abort rendering
+  // since a subsequent renderer can throw when this issue occurs instead
+  while (numberOfReRenders < RE_RENDER_LIMIT && didScheduleRenderPhaseUpdate) {
     // Updates were scheduled during the render phase. They are stored in
     // the `renderPhaseUpdates` map. Call the component again, reusing the
     // work-in-progress hooks and applying the additional updates on top. Keep
@@ -250,12 +246,6 @@ function dispatchAction<A>(
   queue: UpdateQueue<A>,
   action: A
 ) {
-  invariant(
-    numberOfReRenders < RE_RENDER_LIMIT,
-    'Too many re-renders. React limits the number of renders to prevent ' +
-      'an infinite loop.'
-  )
-
   if (componentIdentity === getCurrentIdentity()) {
     // This is a render phase update. Stash it in a lazily-created map of
     // queue -> linked list of updates. After this render pass, we'll restart
