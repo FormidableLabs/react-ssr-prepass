@@ -1,4 +1,4 @@
-import React, { Component, Fragment, createContext, useState } from 'react'
+import React, { Component, Fragment, createContext, useContext, useState } from 'react'
 import { createPortal } from 'react-dom'
 
 import { Dispatcher, clearCurrentContextMap, getCurrentContextMap } from '../internals'
@@ -207,5 +207,21 @@ describe('visitElement', () => {
     expect(children[0].type).toBe(Noop)
     expect(children[0].props.children).toBe('b')
     expect(visitor).toHaveBeenCalledWith(<Test />)
+  })
+
+  it('renders function components with context', () => {
+    const Context = createContext('default')
+    const Test = () => {
+      const value = useContext(Context)
+      return <Noop>{value}</Noop>
+    }
+
+    // We first populate the context
+    visitElement(<Context.Provider value="test" />, [], () => {})
+    // Then manually mount Test afterwards
+    const children = visitElement(<Test />, [], () => {})
+    expect(children.length).toBe(1)
+    expect(children[0].type).toBe(Noop)
+    expect(children[0].props.children).toBe('test')
   })
 })
