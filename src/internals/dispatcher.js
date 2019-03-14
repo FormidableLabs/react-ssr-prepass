@@ -2,7 +2,7 @@
 // Source: https://github.com/facebook/react/blob/c21c41e/packages/react-dom/src/server/ReactPartialRendererHooks.js
 
 import is from 'object-is'
-import { getCurrentIdentity, readContextMap, type Identity } from '../internals'
+import { getCurrentIdentity, readContextMap, type Identity } from './state'
 
 import type {
   AbstractContext,
