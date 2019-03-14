@@ -164,6 +164,36 @@ describe('visitElement', () => {
     })
   })
 
+  it('renders class components with legacy context', () => {
+    class Inner extends Component {
+      render() {
+        return <Noop>{this.context.value}</Noop>
+      }
+    }
+
+    Inner.contextTypes = { value: Noop }
+
+    class Outer extends Component {
+      getChildContext() {
+        return { value: 'test' }
+      }
+
+      render() {
+        return <Inner />
+      }
+    }
+
+    Outer.childContextTypes = { value: Noop }
+
+    // We first populate the context
+    visitElement(<Outer />, [], () => {})
+    // Then manually mount Inner afterwards
+    const children = visitElement(<Inner />, [], () => {})
+    expect(children.length).toBe(1)
+    expect(children[0].type).toBe(Noop)
+    expect(children[0].props.children).toBe('test')
+  })
+
   it('renders function components', () => {
     const Test = () => {
       const [value, setValue] = useState('a')
