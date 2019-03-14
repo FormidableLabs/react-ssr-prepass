@@ -6,8 +6,9 @@ import type { AbstractContext, UserElement, ContextMap } from '../types'
 
 export opaque type Identity = {}
 
+const emptyMap: ContextMap = new Map()
 let currentIdentity: Identity | null = null
-let currentContextMap: ContextMap = new Map()
+let currentContextMap: ContextMap = emptyMap
 
 export const makeIdentity = (): Identity => ({})
 
@@ -27,6 +28,10 @@ export const getCurrentIdentity = (): Identity => {
   // https://github.com/facebook/react/blob/c21c41e/packages/react-dom/src/server/ReactPartialRendererHooks.js#L63-L71
 
   return (currentIdentity: Identity)
+}
+
+export const clearCurrentContextMap = (map: ContextMap) => {
+  currentContextMap = emptyMap
 }
 
 export const setCurrentContextMap = (map: ContextMap) => {

@@ -12,6 +12,7 @@ import {
 } from './render'
 
 import {
+  clearCurrentContextMap,
   setCurrentContextMap,
   getCurrentContextMap,
   Dispatcher
@@ -52,6 +53,7 @@ const flushFrames = (queue: Frame[], visitor: void | Visitor): Promise<void> => 
 
 const renderPrepass = (element: Node, visitor?: Visitor): Promise<void> => {
   const queue: Frame[] = []
+  clearCurrentContextMap()
   visit(getChildrenArray(element), queue, visitor)
   return flushFrames(queue, visitor)
 }
