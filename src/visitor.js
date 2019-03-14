@@ -23,7 +23,8 @@ import type {
   SuspenseElement,
   ForwardRefElement,
   MemoElement,
-  UserElement
+  UserElement,
+  DOMElement
 } from './types'
 
 import {
@@ -124,11 +125,15 @@ export const visitElement = (
     }
 
     case REACT_ELEMENT_TYPE: {
-      const userElement = ((element: any): UserElement)
-      const type = userElement.type
-      return getChildrenArray(
-        render(type, userElement.props, queue, visitor, userElement)
-      )
+      const el = ((element: any): UserElement | DOMElement)
+      if (typeof el.type === 'string') {
+        return getChildrenArray(el.props.children)
+      } else {
+        const userElement = ((element: any): UserElement)
+        const { type, props } = userElement
+        const child = render(type, props, queue, visitor, userElement)
+        return getChildrenArray(child)
+      }
     }
 
     case REACT_PORTAL_TYPE:

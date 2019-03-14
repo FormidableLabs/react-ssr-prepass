@@ -114,9 +114,16 @@ export type PortalElement = {
   children: Node
 }
 
-/** Normal Elements: <YourComponent>, <div>, ... */
+/** <YourComponent /> */
 export type UserElement = {
   type: ComponentType<DefaultProps> & ComponentStatics,
+  props: DefaultProps,
+  $$typeof: typeof REACT_ELEMENT_TYPE
+}
+
+/** <div /> */
+export type DOMElement = {
+  type: string,
   props: DefaultProps,
   $$typeof: typeof REACT_ELEMENT_TYPE
 }
@@ -130,5 +137,6 @@ export type AbstractElement =
   | ForwardRefElement
   | MemoElement
   | UserElement
+  | DOMElement
   | PortalElement
   | SuspenseElement
