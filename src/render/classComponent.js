@@ -90,9 +90,6 @@ const createInstance = (type: any, props: DefaultProps) => {
     instance.UNSAFE_componentWillMount()
   }
 
-  // Flush all queued up state changes
-  flushEnqueuedState(instance)
-
   return instance
 }
 
@@ -105,6 +102,8 @@ const makeFrame = (type: any, instance: any, thenable: Promise<any>) => ({
 })
 
 const render = (type: any, instance: any, queue: Frame[]) => {
+  // Flush all queued up state changes
+  flushEnqueuedState(instance)
   let child: Node = null
 
   try {
@@ -116,8 +115,6 @@ const render = (type: any, instance: any, queue: Frame[]) => {
 
     queue.push(makeFrame(type, instance, error))
     return null
-  } finally {
-    instance._isMounted = false
   }
 
   if (
@@ -144,6 +141,7 @@ const render = (type: any, instance: any, queue: Frame[]) => {
     } catch (_err) {}
   }
 
+  instance._isMounted = false
   return child
 }
 
