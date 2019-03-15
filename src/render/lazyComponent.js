@@ -11,7 +11,7 @@ import {
 } from '../internals'
 
 const resolve = (type: LazyComponent): Promise<void> => {
-  type._status = 0;
+  type._status = 0 /* PENDING */
 
   return type._ctor()
     .then(Component => {
@@ -21,13 +21,13 @@ const resolve = (type: LazyComponent): Promise<void> => {
           || typeof Component === 'object')
       ) {
         type._result = Component
-        type._status = 1
+        type._status = 1 /* SUCCESSFUL */
       } else {
-        type._status = 2
+        type._status = 2 /* FAILED */
       }
     })
     .catch(() => {
-      type._status = 2
+      type._status = 2 /* FAILED */
     })
 }
 
@@ -36,6 +36,8 @@ const render = (
   props: DefaultProps,
   queue: Frame[]
 ): Node => {
+  // Component has previously been fetched successfully,
+  // so create the element with passed props and return it
   if (type._status === 1) {
     let Component = type._result
     if (Component.default) {
@@ -53,6 +55,7 @@ export const mount = (
   props: DefaultProps,
   queue: Frame[]
 ): Node => {
+  // If the component has not been fetched yet, suspend this component
   if (type._status !== 2 && type._status !== 1) {
     queue.push({
       contextMap: getCurrentContextMap(),

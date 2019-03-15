@@ -82,6 +82,7 @@ export const visitElement = (
 
     case REACT_PROVIDER_TYPE: {
       const providerElement = ((element: any): ProviderElement)
+      // Add provider's value prop to context
       const newContextMap = forkContextMap()
       const { value, children } = providerElement.props
       newContextMap.set(providerElement.type._context, value)
@@ -92,6 +93,7 @@ export const visitElement = (
       const consumerElement = ((element: any): ConsumerElement)
       const { children } = consumerElement.props
 
+        // Read from context and call children, if it's been passed
       if (typeof children === 'function') {
         const value = readContextMap(consumerElement.type._context)
         return getChildrenArray(children(value))
@@ -109,6 +111,7 @@ export const visitElement = (
 
     case REACT_FORWARD_REF_TYPE: {
       const refElement = ((element: any): ForwardRefElement)
+      // Treat inner type as the component instead of React.forwardRef itself
       const type = refElement.type.render
       const props = refElement.props
       const child = mountFunctionComponent(type, props, queue, visitor)
@@ -117,6 +120,7 @@ export const visitElement = (
 
     case REACT_MEMO_TYPE: {
       const memoElement = ((element: any): MemoElement)
+      // Treat inner type as the component instead of React.memo itself
       const type = memoElement.type.type
 
       return getChildrenArray(
@@ -127,6 +131,7 @@ export const visitElement = (
     case REACT_ELEMENT_TYPE: {
       const el = ((element: any): UserElement | DOMElement)
       if (typeof el.type === 'string') {
+        // String elements can be skipped, so we just return children
         return getChildrenArray(el.props.children)
       } else {
         const userElement = ((element: any): UserElement)

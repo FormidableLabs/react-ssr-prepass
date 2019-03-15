@@ -11,18 +11,21 @@ export type BaseFrame = {
   thenable: Promise<any>
 }
 
+/** Description of suspended React.lazy components */
 export type LazyFrame = BaseFrame & {
   kind: 'frame.lazy',
   type: LazyComponent,
   props: Object
 }
 
+/** Description of suspended React.Components */
 export type ClassFrame = BaseFrame & {
   kind: 'frame.class',
   type: ComponentType<DefaultProps> & ComponentStatics,
   instance: any
 }
 
+/** Description of suspended function components with hooks state */
 export type HooksFrame = BaseFrame & {
   kind: 'frame.hooks',
   type: ComponentType<DefaultProps> & ComponentStatics,
