@@ -22,12 +22,7 @@ const {
   ReactCurrentDispatcher
 } = (React: any).__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED
 
-const visit = (children: AbstractElement[], queue: Frame[], visitor: Visitor) => {
-  const prevDispatcher = ReactCurrentDispatcher.current
-  ReactCurrentDispatcher.current = Dispatcher
-  visitChildren(children, queue, visitor)
-  ReactCurrentDispatcher.current = prevDispatcher
-}
+let prevDispatcher = ReactCurrentDispatcher.current
 
 const flushFrames = (queue: Frame[], visitor: Visitor): Promise<void> => {
   if (queue.length === 0) {
@@ -37,6 +32,9 @@ const flushFrames = (queue: Frame[], visitor: Visitor): Promise<void> => {
   const frame = queue.shift()
 
   return frame.thenable.then(() => {
+    prevDispatcher = ReactCurrentDispatcher.current
+    ReactCurrentDispatcher.current = Dispatcher
+
     let children = []
     if (frame.kind === 'frame.class') {
       children = getChildrenArray(updateClassComponent(queue, frame))
@@ -46,7 +44,9 @@ const flushFrames = (queue: Frame[], visitor: Visitor): Promise<void> => {
       children = getChildrenArray(updateLazyComponent(queue, frame))
     }
 
-    visit(children, queue, visitor)
+    visitChildren(children, queue, visitor)
+    ReactCurrentDispatcher.current = prevDispatcher
+
     return flushFrames(queue, visitor)
   })
 }
@@ -59,9 +59,13 @@ const renderPrepass = (element: Node, visitor?: Visitor): Promise<void> => {
   clearCurrentContextMap()
 
   try {
-    visit(getChildrenArray(element), queue, fn)
+    prevDispatcher = ReactCurrentDispatcher.current
+    ReactCurrentDispatcher.current = Dispatcher
+    visitChildren(getChildrenArray(element), queue, fn)
   } catch (error) {
     return Promise.reject(error)
+  } finally {
+    ReactCurrentDispatcher.current = prevDispatcher
   }
 
   return flushFrames(queue, fn)
