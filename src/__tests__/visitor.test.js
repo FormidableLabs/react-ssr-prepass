@@ -1,6 +1,10 @@
 import React, {
   Component,
   Fragment,
+  Suspense,
+  StrictMode,
+  unstable_Profiler as Profiler,
+  unstable_ConcurrentMode as AsyncMode,
   createContext,
   useReducer,
   useContext,
@@ -57,6 +61,36 @@ describe('visitElement', () => {
     expect(children[1].type).toBe(Noop)
   })
 
+  it('walks misc. mode-like components', () => {
+    const assert = element => {
+      const children = visitElement(element, [], () => {})
+      expect(children.length).toBe(1)
+      expect(children[0].type).toBe(Noop)
+    }
+
+    assert(
+      <Suspense fallback={null}>
+        <Noop />
+      </Suspense>
+    )
+
+    assert(
+      <StrictMode>
+        <Noop />
+      </StrictMode>
+    )
+    assert(
+      <AsyncMode>
+        <Noop />
+      </AsyncMode>
+    )
+    assert(
+      <Profiler>
+        <Noop />
+      </Profiler>
+    )
+  })
+
   it('walks DOM elements', () => {
     const element = (
       <div>
@@ -98,7 +132,7 @@ describe('visitElement', () => {
     expect(leaf).toHaveBeenCalledWith('testB')
   })
 
-  it('skipvs over invalid Consumer components', () => {
+  it('skips over invalid Consumer components', () => {
     const Context = createContext('default')
     const children = visitElement(<Context.Consumer />, [], () => {})
     expect(children.length).toBe(0)

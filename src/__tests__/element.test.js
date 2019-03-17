@@ -53,5 +53,12 @@ describe('typeOf', () => {
         type: is.StrictMode
       })
     ).toBe(REACT_STRICT_MODE_TYPE)
+
+    expect(
+      typeOf({
+        $$typeof: is.Element,
+        type: is.Suspense
+      })
+    ).toBe(REACT_SUSPENSE_TYPE)
   })
 })
