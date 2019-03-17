@@ -2,7 +2,8 @@
 
 import type { AbstractContext } from './element'
 
-export type ContextMap = Map<string | AbstractContext, mixed>
+export type ContextStore = Map<AbstractContext, mixed>
+export type ContextMap = { [name: string]: mixed }
 
 export type Dispatch<A> = A => void
 

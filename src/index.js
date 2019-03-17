@@ -12,9 +12,8 @@ import {
 } from './render'
 
 import {
-  clearCurrentContextMap,
+  setCurrentContextStore,
   setCurrentContextMap,
-  getCurrentContextMap,
   Dispatcher
 } from './internals'
 
@@ -51,12 +50,14 @@ const flushFrames = (queue: Frame[], visitor: Visitor): Promise<void> => {
   })
 }
 
-const defaultVisitor = () => {};
+const defaultVisitor = () => {}
 
 const renderPrepass = (element: Node, visitor?: Visitor): Promise<void> => {
   const queue: Frame[] = []
   let fn = visitor !== undefined ? visitor : defaultVisitor
-  clearCurrentContextMap()
+
+  setCurrentContextMap({})
+  setCurrentContextStore(new Map())
 
   try {
     prevDispatcher = ReactCurrentDispatcher.current

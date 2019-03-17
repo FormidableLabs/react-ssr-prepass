@@ -2,7 +2,7 @@
 // Source: https://github.com/facebook/react/blob/c21c41e/packages/react-dom/src/server/ReactPartialRendererHooks.js
 
 import is from 'object-is'
-import { readContextMap } from './state'
+import { readContextValue } from './context'
 
 import type {
   AbstractContext,
@@ -143,12 +143,12 @@ function readContext(context: AbstractContext, _: void | number | boolean) {
   // NOTE: The warning that is used in ReactPartialRendererHooks is obsolete
   // in a prepass, since it'll be caught by a subsequent renderer anyway
   // https://github.com/facebook/react/blob/c21c41e/packages/react-dom/src/server/ReactPartialRendererHooks.js#L215-L223
-  return readContextMap(context)
+  return readContextValue(context)
 }
 
 function useContext(context: AbstractContext, _: void | number | boolean) {
   getCurrentIdentity()
-  return readContextMap(context)
+  return readContextValue(context)
 }
 
 function basicStateReducer<S>(state: S, action: BasicStateAction<S>): S {

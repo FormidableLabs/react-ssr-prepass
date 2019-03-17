@@ -14,10 +14,12 @@ import type {
 
 import {
   maskContext,
-  forkContextMap,
+  assignContextMap,
   setCurrentIdentity,
   setCurrentContextMap,
-  getCurrentContextMap
+  getCurrentContextMap,
+  setCurrentContextStore,
+  getCurrentContextStore
 } from '../internals'
 
 const createUpdater = () => {
@@ -95,6 +97,7 @@ const createInstance = (type: any, props: DefaultProps) => {
 
 const makeFrame = (type: any, instance: any, thenable: Promise<any>) => ({
   contextMap: getCurrentContextMap(),
+  contextStore: getCurrentContextStore(),
   thenable,
   kind: 'frame.class',
   instance,
@@ -122,11 +125,8 @@ const render = (type: any, instance: any, queue: Frame[]) => {
     typeof instance.getChildContext === 'function'
   ) {
     const childContext = instance.getChildContext()
-    if (childContext) {
-      const contextMap = forkContextMap()
-      for (const name in childContext) {
-        contextMap.set(name, childContext[name])
-      }
+    if (childContext !== null && typeof childContext === 'object') {
+      assignContextMap(childContext)
     }
   }
 
@@ -171,5 +171,6 @@ export const mount = (
 export const update = (queue: Frame[], frame: ClassFrame) => {
   setCurrentIdentity(null)
   setCurrentContextMap(frame.contextMap)
+  setCurrentContextStore(frame.contextStore)
   return render(frame.type, frame.instance, queue)
 }

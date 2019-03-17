@@ -18,8 +18,10 @@ import {
   maskContext,
   makeIdentity,
   setCurrentIdentity,
-  setCurrentContextMap,
   getCurrentIdentity,
+  setCurrentContextStore,
+  getCurrentContextStore,
+  setCurrentContextMap,
   getCurrentContextMap,
   renderWithHooks,
   setFirstHook,
@@ -32,6 +34,7 @@ const makeFrame = (
   thenable: Promise<any>
 ) => ({
   contextMap: getCurrentContextMap(),
+  contextStore: getCurrentContextStore(),
   id: getCurrentIdentity(),
   hook: getFirstHook(),
   kind: 'frame.hooks',
@@ -90,5 +93,6 @@ export const update = (queue: Frame[], frame: HooksFrame) => {
   setFirstHook(frame.hook)
   setCurrentIdentity(frame.id)
   setCurrentContextMap(frame.contextMap)
+  setCurrentContextStore(frame.contextStore)
   return render(frame.type, frame.props, queue)
 }

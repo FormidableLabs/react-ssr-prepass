@@ -6,6 +6,8 @@ import { getChildrenArray } from '../element'
 
 import {
   setCurrentIdentity,
+  setCurrentContextStore,
+  getCurrentContextStore,
   setCurrentContextMap,
   getCurrentContextMap
 } from '../internals'
@@ -58,6 +60,7 @@ export const mount = (
   if (type._status !== 2 && type._status !== 1) {
     queue.push({
       contextMap: getCurrentContextMap(),
+      contextStore: getCurrentContextStore(),
       kind: 'frame.lazy',
       thenable: resolve(type),
       props,
@@ -73,5 +76,6 @@ export const mount = (
 export const update = (queue: Frame[], frame: LazyFrame): Node => {
   setCurrentIdentity(null)
   setCurrentContextMap(frame.contextMap)
+  setCurrentContextStore(frame.contextStore)
   return render(frame.type, frame.props, queue)
 }

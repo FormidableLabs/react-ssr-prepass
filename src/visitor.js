@@ -28,11 +28,12 @@ import type {
 } from './types'
 
 import {
-  maskContext,
-  getCurrentContextMap,
-  setCurrentContextMap,
-  readContextMap,
-  forkContextMap
+  flushPrevContextMap,
+  flushPrevContextStore,
+  restoreContextMap,
+  restoreContextStore,
+  readContextValue,
+  setContextValue
 } from './internals'
 
 import {
@@ -83,9 +84,9 @@ export const visitElement = (
     case REACT_PROVIDER_TYPE: {
       const providerElement = ((element: any): ProviderElement)
       // Add provider's value prop to context
-      const newContextMap = forkContextMap()
       const { value, children } = providerElement.props
-      newContextMap.set(providerElement.type._context, value)
+      setContextValue(providerElement.type._context, value)
+
       return getChildrenArray(children)
     }
 
@@ -93,9 +94,9 @@ export const visitElement = (
       const consumerElement = ((element: any): ConsumerElement)
       const { children } = consumerElement.props
 
-        // Read from context and call children, if it's been passed
+      // Read from context and call children, if it's been passed
       if (typeof children === 'function') {
-        const value = readContextMap(consumerElement.type._context)
+        const value = readContextValue(consumerElement.type._context)
         return getChildrenArray(children(value))
       } else {
         return []
@@ -145,18 +146,32 @@ export const visitElement = (
   }
 }
 
+const visitChild = (
+  child: AbstractElement,
+  queue: Frame[],
+  visitor: Visitor
+) => {
+  const children = visitElement(child, queue, visitor)
+  const prevMap = flushPrevContextMap()
+  const prevStore = flushPrevContextStore()
+
+  visitChildren(children, queue, visitor)
+
+  if (prevMap !== undefined) {
+    restoreContextMap(prevMap)
+  }
+
+  if (prevStore !== undefined) {
+    restoreContextStore(prevStore)
+  }
+}
+
 export const visitChildren = (
   children: AbstractElement[],
   queue: Frame[],
   visitor: Visitor
 ) => {
-  if (children.length === 1) {
-    visitChildren(visitElement(children[0], queue, visitor), queue, visitor)
-  } else if (children.length > 1) {
-    const contextMap = getCurrentContextMap()
-    for (let i = 0, l = children.length; i < l; i++) {
-      visitChildren(visitElement(children[i], queue, visitor), queue, visitor)
-      setCurrentContextMap(contextMap)
-    }
+  for (let i = 0, l = children.length; i < l; i++) {
+    visitChild(children[i], queue, visitor)
   }
 }

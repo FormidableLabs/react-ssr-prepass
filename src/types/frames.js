@@ -4,10 +4,11 @@ import type { ComponentType } from 'react'
 import type { Identity } from '../internals'
 import type { LazyComponent } from '../types'
 import type { DefaultProps, ComponentStatics } from './element'
-import type { ContextMap, Hook } from './state'
+import type { ContextMap, ContextStore, Hook } from './state'
 
 export type BaseFrame = {
   contextMap: ContextMap,
+  contextStore: ContextStore,
   thenable: Promise<any>
 }
 

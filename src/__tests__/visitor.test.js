@@ -9,9 +9,13 @@ import { createPortal } from 'react-dom'
 
 import {
   Dispatcher,
-  clearCurrentContextMap,
-  getCurrentContextMap
+  setCurrentContextStore,
+  setCurrentContextMap,
+  getCurrentContextMap,
+  getCurrentContextStore,
+  readContextValue
 } from '../internals'
+
 import { visitElement } from '../visitor'
 
 const {
@@ -23,7 +27,9 @@ let prevDispatcher = null
 beforeEach(() => {
   prevDispatcher = ReactCurrentDispatcher.current
   ReactCurrentDispatcher.current = Dispatcher
-  clearCurrentContextMap()
+
+  setCurrentContextMap({})
+  setCurrentContextStore(new Map())
 })
 
 afterEach(() => {
@@ -75,14 +81,14 @@ describe('visitElement', () => {
       child = visitElement(child, [], () => {})[0]
     }
 
-    expect(getCurrentContextMap().get(Context)).toBe('testA')
+    expect(readContextValue(Context)).toBe('testA')
     expect(leaf).toHaveBeenCalledWith('testA')
 
     for (let i = 0, child = makeChild('testB'); i <= 3 && child; i++) {
       child = visitElement(child, [], () => {})[0]
     }
 
-    expect(getCurrentContextMap().get(Context)).toBe('testB')
+    expect(readContextValue(Context)).toBe('testB')
     expect(leaf).toHaveBeenCalledWith('testB')
   })
 
@@ -107,6 +113,7 @@ describe('visitElement', () => {
 
     expect(queue[0]).toMatchObject({
       contextMap: getCurrentContextMap(),
+      contextStore: getCurrentContextStore(),
       thenable: expect.any(Promise),
       kind: 'frame.lazy',
       type: Test,
