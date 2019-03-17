@@ -15,7 +15,8 @@ let currentContextMap: ContextMap = {}
 let prevContextMap: void | ContextMap = undefined
 let prevContextEntry: void | ContextEntry = undefined
 
-export const getCurrentContextMap = (): ContextMap => currentContextMap
+export const getCurrentContextMap = (): ContextMap =>
+  Object.assign({}, currentContextMap)
 export const getCurrentContextStore = (): ContextStore =>
   new Map(currentContextStore)
 
@@ -32,7 +33,7 @@ export const flushPrevContextStore = (): void | ContextEntry => {
 }
 
 export const restoreContextMap = (prev: ContextMap) => {
-  currentContextMap = prev
+  Object.assign(currentContextMap, prev)
 }
 
 export const restoreContextStore = (prev: ContextEntry) => {
@@ -50,8 +51,11 @@ export const setCurrentContextStore = (store: ContextStore) => {
 }
 
 export const assignContextMap = (map: ContextMap) => {
-  prevContextMap = currentContextMap
-  currentContextMap = Object.assign({}, currentContextMap, map)
+  prevContextMap = {}
+  for (const name in map) {
+    prevContextMap[name] = currentContextMap[name]
+    currentContextMap[name] = map[name]
+  }
 }
 
 export const setContextValue = (context: AbstractContext, value: mixed) => {
