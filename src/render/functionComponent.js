@@ -69,7 +69,7 @@ export const mount = (
   props: DefaultProps,
   queue: Frame[],
   visitor: Visitor,
-  element?: UserElement,
+  element?: UserElement
 ): Node => {
   setFirstHook(null)
   setCurrentIdentity(makeIdentity())

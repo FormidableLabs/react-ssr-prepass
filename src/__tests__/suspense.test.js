@@ -15,8 +15,11 @@ describe('renderPrepass', () => {
   describe('function components', () => {
     it('supports suspending subtrees', () => {
       const value = {}
-      const getValue = jest.fn()
-        .mockImplementationOnce(() => { throw Promise.resolve() })
+      const getValue = jest
+        .fn()
+        .mockImplementationOnce(() => {
+          throw Promise.resolve()
+        })
         .mockImplementationOnce(() => value)
 
       const Inner = jest.fn(props => {
@@ -54,8 +57,11 @@ describe('renderPrepass', () => {
     })
 
     it('preserves state correctly across suspensions', () => {
-      const getValue = jest.fn()
-        .mockImplementationOnce(() => { throw Promise.resolve() })
+      const getValue = jest
+        .fn()
+        .mockImplementationOnce(() => {
+          throw Promise.resolve()
+        })
         .mockImplementation(() => 'test')
 
       const Inner = jest.fn(props => {
@@ -84,7 +90,9 @@ describe('renderPrepass', () => {
     })
 
     it('ignores thrown non-promises', () => {
-      const Outer = () => { throw new Error('test') }
+      const Outer = () => {
+        throw new Error('test')
+      }
       const render$ = renderPrepass(<Outer />)
       expect(render$).rejects.toThrow('test')
     })
@@ -95,7 +103,7 @@ describe('renderPrepass', () => {
 
       const visitor = jest.fn(element => {
         if (element.type === Inner) return Promise.resolve()
-      });
+      })
 
       const render$ = renderPrepass(<Outer />, visitor)
 
@@ -117,14 +125,19 @@ describe('renderPrepass', () => {
   describe('class components', () => {
     it('supports suspending subtrees', () => {
       const value = {}
-      const getValue = jest.fn()
-        .mockImplementationOnce(() => { throw Promise.resolve() })
+      const getValue = jest
+        .fn()
+        .mockImplementationOnce(() => {
+          throw Promise.resolve()
+        })
         .mockImplementationOnce(() => value)
 
       const Inner = jest.fn(props => expect(props.value).toBe(value))
 
       class Outer extends Component {
-        render() { return <Inner value={getValue()} /> }
+        render() {
+          return <Inner value={getValue()} />
+        }
       }
 
       const render$ = renderPrepass(<Outer />)
@@ -144,7 +157,9 @@ describe('renderPrepass', () => {
 
     it('ignores thrown non-promises', () => {
       class Outer extends Component {
-        render() { throw new Error('test') }
+        render() {
+          throw new Error('test')
+        }
       }
 
       const render$ = renderPrepass(<Outer />)
@@ -155,7 +170,9 @@ describe('renderPrepass', () => {
       const Inner = jest.fn(() => null)
 
       class Outer extends Component {
-        render() { return <Inner /> }
+        render() {
+          return <Inner />
+        }
       }
 
       const visitor = jest.fn((element, instance) => {
@@ -163,7 +180,7 @@ describe('renderPrepass', () => {
           expect(instance).toEqual(expect.any(Outer))
           return Promise.resolve()
         }
-      });
+      })
 
       const render$ = renderPrepass(<Outer />, visitor)
 
@@ -200,7 +217,7 @@ describe('renderPrepass', () => {
           instance.updater.enqueueForceUpdate(instance)
           instance.updater.enqueueReplaceState(instance, newState)
         }
-      });
+      })
 
       renderPrepass(<Outer />, visitor)
       expect(visitor).toHaveBeenCalledTimes(1)
@@ -315,7 +332,7 @@ describe('renderPrepass', () => {
     const TestC = jest.fn(() => {
       expect(useContext(Context)).toBe('c')
       if (!hasSuspended) {
-        throw Promise.resolve().then(() => hasSuspended = true)
+        throw Promise.resolve().then(() => (hasSuspended = true))
       }
 
       return null
@@ -333,7 +350,7 @@ describe('renderPrepass', () => {
           <TestC />
         </Context.Provider>
       </Fragment>
-    );
+    )
 
     const render$ = renderPrepass(<Wrapper />)
     expect(TestC).toHaveBeenCalledTimes(1)

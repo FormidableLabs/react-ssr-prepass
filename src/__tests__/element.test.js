@@ -20,28 +20,38 @@ describe('typeOf', () => {
   it('correctly identifies all elements', () => {
     expect(typeOf({})).toBe(undefined)
 
-    expect(typeOf({
-      $$typeof: is.Portal
-    })).toBe(REACT_PORTAL_TYPE)
+    expect(
+      typeOf({
+        $$typeof: is.Portal
+      })
+    ).toBe(REACT_PORTAL_TYPE)
 
-    expect(typeOf({
-      $$typeof: is.Element,
-      type: is.ConcurrentMode
-    })).toBe(REACT_CONCURRENT_MODE_TYPE)
+    expect(
+      typeOf({
+        $$typeof: is.Element,
+        type: is.ConcurrentMode
+      })
+    ).toBe(REACT_CONCURRENT_MODE_TYPE)
 
-    expect(typeOf({
-      $$typeof: is.Element,
-      type: is.Fragment
-    })).toBe(REACT_FRAGMENT_TYPE)
+    expect(
+      typeOf({
+        $$typeof: is.Element,
+        type: is.Fragment
+      })
+    ).toBe(REACT_FRAGMENT_TYPE)
 
-    expect(typeOf({
-      $$typeof: is.Element,
-      type: is.Profiler
-    })).toBe(REACT_PROFILER_TYPE)
+    expect(
+      typeOf({
+        $$typeof: is.Element,
+        type: is.Profiler
+      })
+    ).toBe(REACT_PROFILER_TYPE)
 
-    expect(typeOf({
-      $$typeof: is.Element,
-      type: is.StrictMode
-    })).toBe(REACT_STRICT_MODE_TYPE)
+    expect(
+      typeOf({
+        $$typeof: is.Element,
+        type: is.StrictMode
+      })
+    ).toBe(REACT_STRICT_MODE_TYPE)
   })
 })

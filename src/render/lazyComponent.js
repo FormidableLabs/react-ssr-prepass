@@ -13,7 +13,8 @@ import {
 const resolve = (type: LazyComponent): Promise<void> => {
   type._status = 0 /* PENDING */
 
-  return type._ctor()
+  return type
+    ._ctor()
     .then(Component => {
       if (typeof Component === 'function') {
         type._result = Component
@@ -69,10 +70,7 @@ export const mount = (
   return render(type, props, queue)
 }
 
-export const update = (
-  queue: Frame[],
-  frame: LazyFrame
-): Node => {
+export const update = (queue: Frame[], frame: LazyFrame): Node => {
   setCurrentIdentity(null)
   setCurrentContextMap(frame.contextMap)
   return render(frame.type, frame.props, queue)

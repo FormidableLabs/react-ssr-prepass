@@ -1,7 +1,17 @@
-import React, { Component, Fragment, createContext, useContext, useState } from 'react'
+import React, {
+  Component,
+  Fragment,
+  createContext,
+  useContext,
+  useState
+} from 'react'
 import { createPortal } from 'react-dom'
 
-import { Dispatcher, clearCurrentContextMap, getCurrentContextMap } from '../internals'
+import {
+  Dispatcher,
+  clearCurrentContextMap,
+  getCurrentContextMap
+} from '../internals'
 import { visitElement } from '../visitor'
 
 const {
@@ -24,7 +34,13 @@ const Noop = () => null
 
 describe('visitElement', () => {
   it('walks Fragments', () => {
-    const element = <Fragment><Noop />{null}<Noop /></Fragment>
+    const element = (
+      <Fragment>
+        <Noop />
+        {null}
+        <Noop />
+      </Fragment>
+    )
     const children = visitElement(element, [], () => {})
     expect(children.length).toBe(2)
     expect(children[0].type).toBe(Noop)
@@ -32,7 +48,13 @@ describe('visitElement', () => {
   })
 
   it('walks DOM elements', () => {
-    const element = <div><Noop />{null}<Noop /></div>
+    const element = (
+      <div>
+        <Noop />
+        {null}
+        <Noop />
+      </div>
+    )
     const children = visitElement(element, [], () => {})
     expect(children.length).toBe(2)
     expect(children[0].type).toBe(Noop)
@@ -45,9 +67,7 @@ describe('visitElement', () => {
 
     const makeChild = value => (
       <Context.Provider value={value}>
-        <Context.Consumer>
-          {leaf}
-        </Context.Consumer>
+        <Context.Consumer>{leaf}</Context.Consumer>
       </Context.Provider>
     )
 
@@ -115,7 +135,7 @@ describe('visitElement', () => {
   })
 
   it('renders class components with getDerivedStateFromProps', () => {
-    const onUnmount = jest.fn();
+    const onUnmount = jest.fn()
 
     class Test extends Component {
       static getDerivedStateFromProps() {
@@ -136,7 +156,7 @@ describe('visitElement', () => {
       }
     }
 
-    const visitor = jest.fn();
+    const visitor = jest.fn()
     const children = visitElement(<Test />, [], visitor)
 
     expect(children.length).toBe(1)
@@ -147,15 +167,15 @@ describe('visitElement', () => {
   })
 
   it('renders class components with componentWillMount', () => {
-    ['componentWillMount', 'UNSAFE_componentWillMount'].forEach(methodName => {
-      const onUnmount = jest.fn();
+    ;['componentWillMount', 'UNSAFE_componentWillMount'].forEach(methodName => {
+      const onUnmount = jest.fn()
 
       class Test extends Component {
         constructor() {
           super()
 
           this.state = { value: 'a' }
-          this[methodName] = function () {
+          this[methodName] = function() {
             this.setState({ value: 'b' })
           }
         }
@@ -214,7 +234,7 @@ describe('visitElement', () => {
       return <Noop>{value}</Noop>
     }
 
-    const visitor = jest.fn();
+    const visitor = jest.fn()
     const children = visitElement(<Test />, [], visitor)
     expect(children.length).toBe(1)
     expect(children[0].type).toBe(Noop)
