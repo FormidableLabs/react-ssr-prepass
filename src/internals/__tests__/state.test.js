@@ -1,15 +1,4 @@
-import {
-  getCurrentIdentity,
-  setCurrentContextMap,
-  readContextMap,
-  maskContext
-} from '../state'
-
-describe('getCurrentIdentity', () => {
-  it('throws when called outside of function components', () => {
-    expect(getCurrentIdentity).toThrow()
-  })
-})
+import { setCurrentContextMap, readContextMap, maskContext } from '../state'
 
 describe('readContextMap', () => {
   it('returns values in a Map by key', () => {

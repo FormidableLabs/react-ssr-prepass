@@ -2,7 +2,7 @@
 // Source: https://github.com/facebook/react/blob/c21c41e/packages/react-dom/src/server/ReactPartialRendererHooks.js
 
 import is from 'object-is'
-import { getCurrentIdentity, readContextMap, type Identity } from './state'
+import { readContextMap } from './state'
 
 import type {
   AbstractContext,
@@ -12,6 +12,31 @@ import type {
   UpdateQueue,
   Hook
 } from '../types'
+
+export opaque type Identity = {}
+
+let currentIdentity: Identity | null = null
+
+export const makeIdentity = (): Identity => ({})
+
+export const setCurrentIdentity = (id: Identity | null) => {
+  currentIdentity = id
+}
+
+export const getCurrentIdentity = (): Identity => {
+  if (currentIdentity === null) {
+    throw new Error(
+      '[react-ssr-prepass] Hooks can only be called inside the body of a function component. ' +
+        '(https://fb.me/react-invalid-hook-call)'
+    )
+  }
+
+  // NOTE: The warning that is used in ReactPartialRendererHooks is obsolete
+  // in a prepass, since it'll be caught by a subsequent renderer anyway
+  // https://github.com/facebook/react/blob/c21c41e/packages/react-dom/src/server/ReactPartialRendererHooks.js#L63-L71
+
+  return (currentIdentity: Identity)
+}
 
 let firstWorkInProgressHook: Hook | null = null
 let workInProgressHook: Hook | null = null
