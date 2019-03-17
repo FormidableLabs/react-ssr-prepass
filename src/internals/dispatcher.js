@@ -231,9 +231,6 @@ function useRef<T>(initialValue: T): { current: T } {
   const previousRef = workInProgressHook.memoizedState
   if (previousRef === null) {
     const ref = { current: initialValue }
-    if (__DEV__) {
-      Object.seal(ref)
-    }
     workInProgressHook.memoizedState = ref
     return ref
   } else {
