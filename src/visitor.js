@@ -152,11 +152,13 @@ const visitChild = (
   visitor: Visitor
 ) => {
   const children = visitElement(child, queue, visitor)
+  // Flush the context changes
   const prevMap = flushPrevContextMap()
   const prevStore = flushPrevContextStore()
 
   visitChildren(children, queue, visitor)
 
+  // Restore context changes after children have been walked
   if (prevMap !== undefined) {
     restoreContextMap(prevMap)
   }

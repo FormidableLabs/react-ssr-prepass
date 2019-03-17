@@ -7,6 +7,16 @@ import type {
   ContextStore
 } from '../types'
 
+/* The context is kept as a Map from a Context value to the current
+   value on the React element tree.
+   The legacy context is kept as a simple object.
+   When the tree is being walked modifications are made by assigning
+   new legacy context maps or new context values.
+   These changes are kept in the `prev` variables and must be flushed
+   before continuing to walk the tree.
+   After walking the children they can be restored.
+   This way the context recursively restores itself on the way up. */
+
 type ContextEntry = [AbstractContext, mixed]
 
 let currentContextStore: ContextStore = new Map()
