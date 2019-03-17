@@ -13,11 +13,11 @@ let prevDispatcher = null
 beforeEach(() => {
   prevDispatcher = ReactCurrentDispatcher.current
   ReactCurrentDispatcher.current = Dispatcher
+  clearCurrentContextMap()
 })
 
 afterEach(() => {
   ReactCurrentDispatcher.current = prevDispatcher
-  clearCurrentContextMap()
 })
 
 const Noop = () => null
@@ -66,6 +66,12 @@ describe('visitElement', () => {
     expect(leaf).toHaveBeenCalledWith('testB')
   })
 
+  it('skipvs over invalid Consumer components', () => {
+    const Context = createContext('default')
+    const children = visitElement(<Context.Consumer />, [], () => {})
+    expect(children.length).toBe(0)
+  })
+
   it('resolves lazy components', () => {
     const defer = jest.fn().mockImplementation(() => {
       return Promise.resolve().then(() => Noop)
@@ -90,6 +96,13 @@ describe('visitElement', () => {
 
   it('walks over forwardRef components', () => {
     const Test = React.forwardRef(() => <Noop />)
+    const children = visitElement(<Test />, [], () => {})
+    expect(children.length).toBe(1)
+    expect(children[0].type).toBe(Noop)
+  })
+
+  it('walks over memo components', () => {
+    const Test = React.memo(() => <Noop />)
     const children = visitElement(<Test />, [], () => {})
     expect(children.length).toBe(1)
     expect(children[0].type).toBe(Noop)

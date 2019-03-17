@@ -32,12 +32,12 @@
     ]
   },
   "lint-staged": {
-    "*.{js}": [
+    "**/*.{js}": [
       "flow focus-check",
       "prettier --write",
       "git add"
     ],
-    "*.{json,md}": [
+    "**/*.{json,md}": [
       "prettier --write",
       "git add"
     ]

@@ -109,6 +109,13 @@ export const visitElement = (
       return getChildrenArray(child)
     }
 
+    case REACT_MEMO_TYPE: {
+      const memoElement = ((element: any): MemoElement)
+      const type = memoElement.type.type
+      const child = render(type, memoElement.props, queue, visitor)
+      return getChildrenArray(child)
+    }
+
     case REACT_FORWARD_REF_TYPE: {
       const refElement = ((element: any): ForwardRefElement)
       // Treat inner type as the component instead of React.forwardRef itself
@@ -116,16 +123,6 @@ export const visitElement = (
       const props = refElement.props
       const child = mountFunctionComponent(type, props, queue, visitor)
       return getChildrenArray(child)
-    }
-
-    case REACT_MEMO_TYPE: {
-      const memoElement = ((element: any): MemoElement)
-      // Treat inner type as the component instead of React.memo itself
-      const type = memoElement.type.type
-
-      return getChildrenArray(
-        render(type, memoElement.props, queue, visitor)
-      )
     }
 
     case REACT_ELEMENT_TYPE: {

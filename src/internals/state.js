@@ -17,7 +17,7 @@ export const setCurrentIdentity = (id: Identity | null) => {
 export const getCurrentIdentity = (): Identity => {
   if (currentIdentity === null) {
     throw new Error(
-      'Hooks can only be called inside the body of a function component. ' +
+      '[react-ssr-prepass] Hooks can only be called inside the body of a function component. ' +
         '(https://fb.me/react-invalid-hook-call)'
     )
   }
