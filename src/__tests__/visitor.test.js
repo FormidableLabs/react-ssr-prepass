@@ -2,9 +2,11 @@ import React, {
   Component,
   Fragment,
   createContext,
+  useReducer,
   useContext,
   useState
 } from 'react'
+
 import { createPortal } from 'react-dom'
 
 import {
@@ -253,6 +255,23 @@ describe('visitElement', () => {
     expect(children.length).toBe(1)
     expect(children[0].type).toBe(Noop)
     expect(children[0].props.children).toBe('b')
+    expect(visitor).toHaveBeenCalledWith(<Test />)
+  })
+
+  it('renders function components with reducers', () => {
+    const reducer = (prev, action) => (action === 'increment' ? prev + 1 : prev)
+
+    const Test = () => {
+      const [value, dispatch] = useReducer(reducer, 0)
+      if (value === 0) dispatch('increment')
+      return <Noop>{value}</Noop>
+    }
+
+    const visitor = jest.fn()
+    const children = visitElement(<Test />, [], visitor)
+    expect(children.length).toBe(1)
+    expect(children[0].type).toBe(Noop)
+    expect(children[0].props.children).toBe(1)
     expect(visitor).toHaveBeenCalledWith(<Test />)
   })
 
