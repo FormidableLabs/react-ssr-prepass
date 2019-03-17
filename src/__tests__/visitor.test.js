@@ -324,4 +324,16 @@ describe('visitElement', () => {
     expect(children[0].type).toBe(Noop)
     expect(children[0].props.children).toBe('test')
   })
+
+  it('renders function components with default props', () => {
+    const Test = props => <Noop>{props.value}</Noop>
+
+    Test.defaultProps = { value: 'default' }
+
+    const childA = visitElement(<Test />, [], () => {})[0]
+    expect(childA.props.children).toBe('default')
+
+    const childB = visitElement(<Test value="test" />, [], () => {})[0]
+    expect(childB.props.children).toBe('test')
+  })
 })
