@@ -15,12 +15,15 @@ const resolve = (type: LazyComponent): Promise<void> => {
 
   return type._ctor()
     .then(Component => {
-      if (
-        Component !== null &&
-        (typeof Component === 'function'
-          || typeof Component === 'object')
-      ) {
+      if (typeof Component === 'function') {
         type._result = Component
+        type._status = 1 /* SUCCESSFUL */
+      } else if (
+        Component !== null &&
+        typeof Component === 'object' &&
+        typeof Component.default === 'function'
+      ) {
+        type._result = Component.default
         type._status = 1 /* SUCCESSFUL */
       } else {
         type._status = 2 /* FAILED */
@@ -39,12 +42,7 @@ const render = (
   // Component has previously been fetched successfully,
   // so create the element with passed props and return it
   if (type._status === 1) {
-    let Component = type._result
-    if (Component.default) {
-      Component = Component.default
-    }
-
-    return createElement(Component, props)
+    return createElement(type._result, props)
   }
 
   return null
