@@ -1,0 +1,22 @@
+dist: trusty
+language: node_js
+notifications:
+  email:
+    on_success: change
+    on_failure: always
+
+cache: yarn
+
+jobs:
+  include:
+    - stage: Test
+      name: Jest
+      node_js: 10
+      script:
+        - yarn run test --coverage
+        - cat coverage/lcov.info | node_modules/.bin/coveralls || echo "Coveralls upload failed"
+    - stage: Build
+      name: Build
+      node_js: 10
+      script:
+        - yarn run build
