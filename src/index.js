@@ -56,9 +56,14 @@ const defaultVisitor = () => {};
 const renderPrepass = (element: Node, visitor?: Visitor): Promise<void> => {
   const queue: Frame[] = []
   let fn = visitor !== undefined ? visitor : defaultVisitor
-
   clearCurrentContextMap()
-  visit(getChildrenArray(element), queue, fn)
+
+  try {
+    visit(getChildrenArray(element), queue, fn)
+  } catch (error) {
+    return Promise.reject(error)
+  }
+
   return flushFrames(queue, fn)
 }
 
