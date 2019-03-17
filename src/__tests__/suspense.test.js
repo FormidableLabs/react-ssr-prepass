@@ -1,4 +1,13 @@
-import React, { Fragment, Component, createElement, createContext, useContext, useState } from 'react'
+import React, {
+  Fragment,
+  Component,
+  createElement,
+  createContext,
+  useContext,
+  useState,
+  useMemo,
+  useRef
+} from 'react'
 
 import renderPrepass from '..'
 
@@ -41,6 +50,36 @@ describe('renderPrepass', () => {
         // Since only the subtree rerenders, we expect the Wrapper to have
         // only renderer once
         expect(Wrapper).toHaveBeenCalledTimes(1)
+      })
+    })
+
+    it('preserves state correctly across suspensions', () => {
+      const getValue = jest.fn()
+        .mockImplementationOnce(() => { throw Promise.resolve() })
+        .mockImplementation(() => 'test')
+
+      const Inner = jest.fn(props => {
+        expect(props.value).toBe('test')
+        expect(props.state).toBe('test')
+      })
+
+      const Outer = jest.fn(() => {
+        const [state, setState] = useState('default')
+
+        const memoed = useMemo(() => state, [state])
+        const ref = useRef('initial')
+        expect(memoed).toBe(state)
+        expect(ref.current).toBe('initial')
+
+        const value = getValue()
+        setState(value)
+
+        return <Inner value={value} state={state} />
+      })
+
+      return renderPrepass(<Outer />).then(() => {
+        expect(Outer).toHaveBeenCalledTimes(3 * 3 * 3 /* welp */)
+        expect(Inner).toHaveBeenCalledTimes(2)
       })
     })
 

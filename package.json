@@ -32,7 +32,7 @@
     ]
   },
   "lint-staged": {
-    "**/*.{js}": [
+    "**/*.js": [
       "flow focus-check",
       "prettier --write",
       "git add"
