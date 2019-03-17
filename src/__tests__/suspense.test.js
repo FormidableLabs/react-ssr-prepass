@@ -338,19 +338,23 @@ describe('renderPrepass', () => {
       return null
     })
 
-    const Wrapper = () => (
-      <Fragment>
-        <Context.Provider value="a">
-          <TestA />
-        </Context.Provider>
-        <Context.Provider value="b">
-          <TestB />
-        </Context.Provider>
-        <Context.Provider value="c">
-          <TestC />
-        </Context.Provider>
-      </Fragment>
-    )
+    const Wrapper = () => {
+      expect(useContext(Context)).toBe('default')
+
+      return (
+        <Fragment>
+          <Context.Provider value="a">
+            <TestA />
+          </Context.Provider>
+          <Context.Provider value="b">
+            <TestB />
+          </Context.Provider>
+          <Context.Provider value="c">
+            <TestC />
+          </Context.Provider>
+        </Fragment>
+      )
+    }
 
     const render$ = renderPrepass(<Wrapper />)
     expect(TestC).toHaveBeenCalledTimes(1)

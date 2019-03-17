@@ -13,6 +13,8 @@ import {
   setCurrentContextMap,
   getCurrentContextMap,
   getCurrentContextStore,
+  flushPrevContextMap,
+  flushPrevContextStore,
   readContextValue
 } from '../internals'
 
@@ -82,6 +84,7 @@ describe('visitElement', () => {
     }
 
     expect(readContextValue(Context)).toBe('testA')
+    expect(flushPrevContextStore()).toEqual([Context, undefined])
     expect(leaf).toHaveBeenCalledWith('testA')
 
     for (let i = 0, child = makeChild('testB'); i <= 3 && child; i++) {
@@ -89,6 +92,7 @@ describe('visitElement', () => {
     }
 
     expect(readContextValue(Context)).toBe('testB')
+    expect(flushPrevContextStore()).toEqual([Context, 'testA'])
     expect(leaf).toHaveBeenCalledWith('testB')
   })
 
@@ -227,8 +231,11 @@ describe('visitElement', () => {
 
     // We first populate the context
     visitElement(<Outer />, [], () => {})
+
     // Then manually mount Inner afterwards
     const children = visitElement(<Inner />, [], () => {})
+
+    expect(flushPrevContextMap()).toEqual({ value: undefined })
     expect(children.length).toBe(1)
     expect(children[0].type).toBe(Noop)
     expect(children[0].props.children).toBe('test')
