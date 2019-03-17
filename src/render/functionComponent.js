@@ -71,6 +71,9 @@ export const mount = (
   visitor: Visitor,
   element?: UserElement,
 ): Node => {
+  setFirstHook(null)
+  setCurrentIdentity(makeIdentity())
+
   if (element !== undefined) {
     const p = visitor(element)
     if (typeof p === 'object' && p !== null && typeof p.then === 'function') {
@@ -79,8 +82,6 @@ export const mount = (
     }
   }
 
-  setFirstHook(null)
-  setCurrentIdentity(makeIdentity())
   return render(type, props, queue)
 }
 
