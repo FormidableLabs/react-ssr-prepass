@@ -365,4 +365,56 @@ describe('renderPrepass', () => {
       expect(TestC).toHaveBeenCalledTimes(2)
     })
   })
+
+  it('correctly tracks legacy context values across subtress and suspenses', () => {
+    let hasSuspended = false
+
+    class Provider extends Component {
+      getChildContext() {
+        return { value: this.props.value }
+      }
+
+      render() {
+        return this.props.children
+      }
+    }
+
+    Provider.childContextTypes = { value: null }
+
+    class TestA extends Component {
+      render() {
+        expect(this.context.value).toBe('a')
+        return null
+      }
+    }
+
+    class TestB extends Component {
+      render() {
+        expect(this.context.value).toBe('b')
+        if (!hasSuspended) {
+          throw Promise.resolve().then(() => (hasSuspended = true))
+        }
+
+        return null
+      }
+    }
+
+    TestA.contextTypes = { value: null }
+    TestB.contextTypes = { value: null }
+
+    const Wrapper = () => (
+      <Fragment>
+        <Provider value="a">
+          <TestA />
+        </Provider>
+        <Provider value="b">
+          <TestB />
+        </Provider>
+      </Fragment>
+    )
+
+    return renderPrepass(<Wrapper />).then(() => {
+      expect(hasSuspended).toBe(true)
+    })
+  })
 })
