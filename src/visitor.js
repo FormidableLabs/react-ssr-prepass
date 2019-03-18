@@ -96,7 +96,9 @@ export const visitElement = (
 
       // Read from context and call children, if it's been passed
       if (typeof children === 'function') {
-        const value = readContextValue(consumerElement.type._context)
+        const type = (consumerElement.type: any)
+        const context = typeof type._context === 'object' ? type._context : type
+        const value = readContextValue(context)
         return getChildrenArray(children(value))
       } else {
         return []

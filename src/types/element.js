@@ -37,10 +37,12 @@ export type ComponentStatics = {
 
 /** <Context.Consumer> */
 export type ConsumerElement = {
-  type: {
-    $$typeof: typeof REACT_CONTEXT_TYPE,
-    _context: AbstractContext
-  },
+  type:
+    | AbstractContext
+    | {
+        $$typeof: typeof REACT_CONTEXT_TYPE,
+        _context: AbstractContext
+      },
   props: { children?: (value: mixed) => Node },
   $$typeof: typeof REACT_ELEMENT_TYPE
 }

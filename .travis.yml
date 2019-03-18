@@ -13,6 +13,7 @@ jobs:
       name: Jest
       node_js: 10
       script:
+        - NODE_ENV=production yarn run test
         - yarn run test --coverage
         - cat coverage/lcov.info | node_modules/.bin/coveralls || echo "Coveralls upload failed"
     - stage: Build
