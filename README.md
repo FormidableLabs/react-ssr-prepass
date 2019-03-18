@@ -1,11 +1,11 @@
 # react-ssr-prepass
 
 <p>
-  <a href="https://travis-ci.org/kitten/react-ssr-prepass">
-    <img alt="Build Status" src="https://travis-ci.org/kitten/react-ssr-prepass.svg?branch=master" />
+  <a href="https://travis-ci.org/FormidableLabs/react-ssr-prepass">
+    <img alt="Build Status" src="https://travis-ci.org/FormidableLabs/react-ssr-prepass.svg?branch=master" />
   </a>
-  <a href="https://coveralls.io/github/kitten/react-ssr-prepass?branch=master">
-    <img alt="Test Coverage" src="https://coveralls.io/repos/github/kitten/react-ssr-prepass/badge.svg?branch=master" />
+  <a href="https://coveralls.io/github/FormidableLabs/react-ssr-prepass?branch=master">
+    <img alt="Test Coverage" src="https://coveralls.io/repos/github/FormidableLabs/react-ssr-prepass/badge.svg?branch=master" />
   </a>
   <a href="https://npmjs.com/package/react-ssr-prepass">
     <img alt="NPM Version" src="https://img.shields.io/npm/v/react-ssr-prepass.svg" />
