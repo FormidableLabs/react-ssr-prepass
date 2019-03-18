@@ -4,10 +4,11 @@
   "description": "A custom partial React SSR renderer for prefetching and suspense",
   "main": "index.js",
   "source": "src/index.js",
-  "author": "Phil Plückthun <phil@kitten.sh>",
+  "author": "Phil Plückthun <phil.pluckthun@formidable.com>",
   "license": "MIT",
+  "repository": "git@github.com:FormidableLabs/react-ssr-prepass.git",
   "bugs": {
-    "url": "https://github.com/kitten/react-ssr-prepass/issues"
+    "url": "https://github.com/FormidableLabs/react-ssr-prepass/issues"
   },
   "files": [
     "index.js",
