@@ -72,13 +72,21 @@ describe('renderPrepass', () => {
       const Outer = jest.fn(() => {
         const [state, setState] = useState('default')
 
-        const memoed = useMemo(() => state, [state])
+        const memoedA = useMemo(() => state, [state])
+        expect(memoedA).toBe(state)
+
+        // This is to test changing dependency arrays
+        const memoedB = useMemo(
+          () => state,
+          state === 'default' ? null : [state]
+        )
+        expect(memoedB).toBe(state)
+
         const ref = useRef('initial')
-        expect(memoed).toBe(state)
         expect(ref.current).toBe('initial')
 
         const value = getValue()
-        setState(value)
+        setState(() => value)
 
         return <Inner value={value} state={state} />
       })

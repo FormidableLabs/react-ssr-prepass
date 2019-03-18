@@ -280,7 +280,12 @@ describe('visitElement', () => {
   it('renders function components', () => {
     const Test = () => {
       const [value, setValue] = useState('a')
-      if (value === 'a') setValue('b')
+      if (value === 'a') {
+        setValue('b')
+        setValue('c')
+        setValue('d')
+      }
+
       return <Noop>{value}</Noop>
     }
 
@@ -288,7 +293,7 @@ describe('visitElement', () => {
     const children = visitElement(<Test />, [], visitor)
     expect(children.length).toBe(1)
     expect(children[0].type).toBe(Noop)
-    expect(children[0].props.children).toBe('b')
+    expect(children[0].props.children).toBe('d')
     expect(visitor).toHaveBeenCalledWith(<Test />)
   })
 
