@@ -7,7 +7,7 @@ import type {
   ContextStore
 } from '../types'
 
-/* The context is kept as a Map from a Context value to the current
+/** The context is kept as a Map from a Context value to the current
    value on the React element tree.
    The legacy context is kept as a simple object.
    When the tree is being walked modifications are made by assigning

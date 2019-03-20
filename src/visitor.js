@@ -148,13 +148,18 @@ export const visitElement = (
   }
 }
 
+/** The context (legacy and createContext are separate) are kept
+    as global state. As we're walking the tree depth-first, we
+    simply overwrite it with new values. This is recursive and
+    as we walk back upwards (after visitChildren) we restore
+    the value that we have previously overwritten. */
 const visitChild = (
   child: AbstractElement,
   queue: Frame[],
   visitor: Visitor
 ) => {
   const children = visitElement(child, queue, visitor)
-  // Flush the context changes
+  // Flush changes (if any) that have been made to the context
   const prevMap = flushPrevContextMap()
   const prevStore = flushPrevContextStore()
 
