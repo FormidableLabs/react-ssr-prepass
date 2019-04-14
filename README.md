@@ -29,6 +29,10 @@ You can use it to fetch data before your SSR code calls `renderToString` or
 > yet. This two-pass approach should just be used until server-side suspense
 > support lands in React.
 
+### Maintenance Status: Experimental 
+
+This project is quite new. We're not sure what our ongoing maintenance plan for this project will be. Bug reports, feature requests and pull requests are welcome. If you like this project, let us know!
+
 ## The Why & How
 
 It's quite common to have some data that needs to be fetched before
