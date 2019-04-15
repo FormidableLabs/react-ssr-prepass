@@ -10,6 +10,9 @@
   <a href="https://npmjs.com/package/react-ssr-prepass">
     <img alt="NPM Version" src="https://img.shields.io/npm/v/react-ssr-prepass.svg" />
   </a>
+  <a href="https://github.com/FormidableLabs/react-ssr-prepass#maintenance-status">
+    <img alt="Maintenance Status" src="https://img.shields.io/badge/maintenance-experimental-blueviolet.svg" />
+  </a>
 </p>
 
 <p>
@@ -145,3 +148,7 @@ The approach of doing an initial "data fetching pass" is inspired by:
 
 - [`react-apollo`'s `getDataFromTree`](https://github.com/apollographql/react-apollo/blob/master/src/getDataFromTree.ts)
 - [`react-tree-walker`](https://github.com/ctrlplusb/react-tree-walker)
+
+## Maintenance Status
+
+**Experimental:** This project is quite new. We're not sure what our ongoing maintenance plan for this project will be. Bug reports, feature requests and pull requests are welcome. If you like this project, let us know!
