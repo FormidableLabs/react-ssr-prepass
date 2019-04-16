@@ -60,7 +60,7 @@ import {
 
 // Time in ms after which the otherwise synchronous visitor yields so that
 // the event loop is not interrupted for too long
-const YIELD_AFTER_MS = __DEV__ ? 20 : 5
+const YIELD_AFTER_MS = process.env.NODE_ENV !== 'production' ? 20 : 5
 
 const render = (
   type: ComponentType<DefaultProps> & ComponentStatics,

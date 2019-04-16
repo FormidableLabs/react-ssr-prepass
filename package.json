@@ -17,8 +17,8 @@
   ],
   "scripts": {
     "prepublishOnly": "run-s build",
-    "build:prod": "microbundle --target node -f cjs --compress --globals '__DEV__=false' -o dist/react-ssr-prepass.production.min.js",
-    "build:dev": "microbundle --target node -f cjs --no-compress --globals '__DEV__=true' -o dist/react-ssr-prepass.development.js",
+    "build:prod": "microbundle --target node -f cjs --compress --define '__DEV__=false' -o dist/react-ssr-prepass.production.min.js",
+    "build:dev": "microbundle --target node -f cjs --no-compress --define '__DEV__=true' -o dist/react-ssr-prepass.development.js",
     "build": "run-p build:prod build:dev",
     "test": "jest",
     "flow": "flow"
