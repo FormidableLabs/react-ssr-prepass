@@ -58,6 +58,10 @@ import {
   REACT_LAZY_TYPE
 } from './symbols'
 
+// Time in ms after which the otherwise synchronous visitor yields so that
+// the event loop is not interrupted for too long
+const YIELD_AFTER_MS = __DEV__ ? 20 : 5
+
 const render = (
   type: ComponentType<DefaultProps> & ComponentStatics,
   props: DefaultProps,
@@ -172,7 +176,7 @@ const visitLoop = (
 ) => {
   const start = Date.now()
 
-  while (traversalChildren.length > 0 && Date.now() - start <= 5) {
+  while (traversalChildren.length > 0 && Date.now() - start <= YIELD_AFTER_MS) {
     const currChildren = traversalChildren[traversalChildren.length - 1]
     const currIndex = traversalIndex[traversalIndex.length - 1]++
 

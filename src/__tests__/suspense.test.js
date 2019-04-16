@@ -18,7 +18,7 @@ describe('renderPrepass', () => {
 
       const Outer = () => {
         const start = Date.now()
-        while (Date.now() - start < 6) {}
+        while (Date.now() - start < 21) {}
         return <Inner />
       }
 

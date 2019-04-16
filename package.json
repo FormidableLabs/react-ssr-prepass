@@ -35,6 +35,11 @@
       "@babel/preset-react"
     ]
   },
+  "jest": {
+    "globals": {
+      "__DEV__": true
+    }
+  },
   "lint-staged": {
     "**/*.js": [
       "flow focus-check",
