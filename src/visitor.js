@@ -11,8 +11,10 @@ import {
 
 import type {
   Visitor,
+  YieldFrame,
   Frame,
   ContextMap,
+  ContextEntry,
   DefaultProps,
   ComponentStatics,
   LazyElement,
@@ -28,12 +30,17 @@ import type {
 } from './types'
 
 import {
+  getCurrentContextMap,
+  getCurrentContextStore,
+  setCurrentContextMap,
+  setCurrentContextStore,
   flushPrevContextMap,
   flushPrevContextStore,
   restoreContextMap,
   restoreContextStore,
   readContextValue,
-  setContextValue
+  setContextValue,
+  setCurrentIdentity
 } from './internals'
 
 import {
@@ -50,6 +57,10 @@ import {
   REACT_MEMO_TYPE,
   REACT_LAZY_TYPE
 } from './symbols'
+
+// Time in ms after which the otherwise synchronous visitor yields so that
+// the event loop is not interrupted for too long
+const YIELD_AFTER_MS = __DEV__ ? 20 : 5
 
 const render = (
   type: ComponentType<DefaultProps> & ComponentStatics,
@@ -121,11 +132,21 @@ export const visitElement = (
 
     case REACT_FORWARD_REF_TYPE: {
       const refElement = ((element: any): ForwardRefElement)
-      // Treat inner type as the component instead of React.forwardRef itself
-      const type = refElement.type.render
-      const props = refElement.props
-      const child = mountFunctionComponent(type, props, queue, visitor)
-      return getChildrenArray(child)
+      if (
+        typeof refElement.type.styledComponentId === 'string' &&
+        typeof refElement.type.target !== 'function'
+      ) {
+        // This is an optimization that's specific to styled-components
+        // We can safely skip them if they're not wrapping a component
+        return getChildrenArray(refElement.props.children)
+      } else {
+        const {
+          props,
+          type: { render }
+        } = refElement
+        const child = mountFunctionComponent(render, props, queue, visitor)
+        return getChildrenArray(child)
+      }
     }
 
     case REACT_ELEMENT_TYPE: {
@@ -148,39 +169,78 @@ export const visitElement = (
   }
 }
 
-/** The context (legacy and createContext are separate) are kept
-    as global state. As we're walking the tree depth-first, we
-    simply overwrite it with new values. This is recursive and
-    as we walk back upwards (after visitChildren) we restore
-    the value that we have previously overwritten. */
-const visitChild = (
-  child: AbstractElement,
+const visitLoop = (
+  traversalChildren: AbstractElement[][],
+  traversalIndex: number[],
+  traversalMap: Array<void | ContextMap>,
+  traversalStore: Array<void | ContextEntry>,
   queue: Frame[],
   visitor: Visitor
 ) => {
-  const children = visitElement(child, queue, visitor)
-  // Flush changes (if any) that have been made to the context
-  const prevMap = flushPrevContextMap()
-  const prevStore = flushPrevContextStore()
+  const start = Date.now()
 
-  visitChildren(children, queue, visitor)
+  while (traversalChildren.length > 0 && Date.now() - start <= YIELD_AFTER_MS) {
+    const currChildren = traversalChildren[traversalChildren.length - 1]
+    const currIndex = traversalIndex[traversalIndex.length - 1]++
 
-  // Restore context changes after children have been walked
-  if (prevMap !== undefined) {
-    restoreContextMap(prevMap)
-  }
+    if (currIndex < currChildren.length) {
+      const element = currChildren[currIndex]
+      const children = visitElement(element, queue, visitor)
 
-  if (prevStore !== undefined) {
-    restoreContextStore(prevStore)
+      traversalChildren.push(children)
+      traversalIndex.push(0)
+      traversalMap.push(flushPrevContextMap())
+      traversalStore.push(flushPrevContextStore())
+    } else {
+      traversalChildren.pop()
+      traversalIndex.pop()
+      restoreContextMap(traversalMap.pop())
+      restoreContextStore(traversalStore.pop())
+    }
   }
 }
 
 export const visitChildren = (
-  children: AbstractElement[],
+  init: AbstractElement[],
   queue: Frame[],
   visitor: Visitor
 ) => {
-  for (let i = 0, l = children.length; i < l; i++) {
-    visitChild(children[i], queue, visitor)
+  const traversalChildren: AbstractElement[][] = [init]
+  const traversalIndex: number[] = [0]
+  const traversalMap: Array<void | ContextMap> = [flushPrevContextMap()]
+  const traversalStore: Array<void | ContextEntry> = [flushPrevContextStore()]
+
+  visitLoop(
+    traversalChildren,
+    traversalIndex,
+    traversalMap,
+    traversalStore,
+    queue,
+    visitor
+  )
+
+  if (traversalChildren.length > 0) {
+    queue.unshift({
+      contextMap: getCurrentContextMap(),
+      contextStore: getCurrentContextStore(),
+      thenable: Promise.resolve(),
+      kind: 'frame.yield',
+      children: traversalChildren,
+      index: traversalIndex,
+      map: traversalMap,
+      store: traversalStore
+    })
   }
+}
+
+export const resumeVisitChildren = (
+  frame: YieldFrame,
+  queue: Frame[],
+  visitor: Visitor
+) => {
+  setCurrentIdentity(null)
+  setCurrentContextMap(frame.contextMap)
+  setCurrentContextStore(frame.contextStore)
+
+  visitLoop(frame.children, frame.index, frame.map, frame.store, queue, visitor)
 }

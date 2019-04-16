@@ -12,6 +12,40 @@ import React, {
 import renderPrepass from '..'
 
 describe('renderPrepass', () => {
+  describe('event loop yielding', () => {
+    it('yields to the event loop when work is taking too long', () => {
+      const Inner = jest.fn(() => null)
+
+      const Outer = () => {
+        const start = Date.now()
+        while (Date.now() - start < 21) {}
+        return <Inner />
+      }
+
+      const render$ = renderPrepass(<Outer />)
+
+      expect(Inner).toHaveBeenCalledTimes(0)
+
+      setImmediate(() => {
+        setImmediate(() => {
+          expect(Inner).toHaveBeenCalledTimes(1)
+        })
+      })
+
+      return render$.then(() => {
+        expect(Inner).toHaveBeenCalledTimes(1)
+      })
+    })
+
+    it('does not yields when work is below the threshold', () => {
+      const Inner = jest.fn(() => null)
+      const Outer = () => <Inner />
+      const render$ = renderPrepass(<Outer />)
+
+      expect(Inner).toHaveBeenCalledTimes(1)
+    })
+  })
+
   describe('function components', () => {
     it('supports suspending subtrees', () => {
       const value = {}
