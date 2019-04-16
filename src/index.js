@@ -1,9 +1,17 @@
 // @flow
 
 import React, { type Node, type Element } from 'react'
-import type { Visitor, Frame, AbstractElement } from './types'
 import { visitChildren, resumeVisitChildren } from './visitor'
 import { getChildrenArray } from './element'
+
+import type {
+  Frame,
+  AbstractElement,
+  SkipPredicate,
+  PrepassParams,
+  Visitor,
+  Options
+} from './types'
 
 import {
   updateFunctionComponent,
@@ -28,7 +36,7 @@ let prevDispatcher = ReactCurrentDispatcher.current
     the queue. Hence we recursively look at suspended components in
     this queue, wait for their promises to resolve, and continue
     calling visitChildren on their children. */
-const flushFrames = (queue: Frame[], visitor: Visitor): Promise<void> => {
+const flushFrames = (queue: Frame[], opts: Options): Promise<void> => {
   if (queue.length === 0) {
     return Promise.resolve()
   }
@@ -48,34 +56,58 @@ const flushFrames = (queue: Frame[], visitor: Visitor): Promise<void> => {
       visitChildren(
         getChildrenArray(updateClassComponent(queue, frame)),
         queue,
-        visitor
+        opts
       )
     } else if (frame.kind === 'frame.hooks') {
       visitChildren(
         getChildrenArray(updateFunctionComponent(queue, frame)),
         queue,
-        visitor
+        opts
       )
     } else if (frame.kind === 'frame.lazy') {
       visitChildren(
         getChildrenArray(updateLazyComponent(queue, frame)),
         queue,
-        visitor
+        opts
       )
     } else if (frame.kind === 'frame.yield') {
-      resumeVisitChildren(frame, queue, visitor)
+      resumeVisitChildren(frame, queue, opts)
     }
 
     ReactCurrentDispatcher.current = prevDispatcher
-    return flushFrames(queue, visitor)
+    return flushFrames(queue, opts)
   })
 }
 
-const defaultVisitor = () => {}
+const defaultOptions: Options = {
+  visitor: () => undefined,
+  shouldSkip: () => false
+}
 
-const renderPrepass = (element: Node, visitor?: Visitor): Promise<void> => {
+const renderPrepass = (
+  element: Node,
+  params?: Visitor | PrepassParams
+): Promise<void> => {
   const queue: Frame[] = []
-  let fn = visitor !== undefined ? visitor : defaultVisitor
+
+  let options: Options
+  if (typeof params === 'function') {
+    options = {
+      shouldSkip: defaultOptions.shouldSkip,
+      visitor: params
+    }
+  } else if (typeof params === 'object') {
+    options = {
+      shouldSkip:
+        params.shouldSkip !== undefined
+          ? params.shouldSkip
+          : defaultOptions.shouldSkip,
+      visitor:
+        params.visitor !== undefined ? params.visitor : defaultOptions.visitor
+    }
+  } else {
+    options = defaultOptions
+  }
 
   // Context state is kept globally and is modified in-place.
   // Before we start walking the element tree we need to reset
@@ -90,14 +122,14 @@ const renderPrepass = (element: Node, visitor?: Visitor): Promise<void> => {
     prevDispatcher = ReactCurrentDispatcher.current
     ReactCurrentDispatcher.current = Dispatcher
 
-    visitChildren(getChildrenArray(element), queue, fn)
+    visitChildren(getChildrenArray(element), queue, options)
   } catch (error) {
     return Promise.reject(error)
   } finally {
     ReactCurrentDispatcher.current = prevDispatcher
   }
 
-  return flushFrames(queue, fn)
+  return flushFrames(queue, options)
 }
 
 export default renderPrepass

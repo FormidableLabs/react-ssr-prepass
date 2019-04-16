@@ -10,7 +10,7 @@ import {
 } from './render'
 
 import type {
-  Visitor,
+  Options,
   YieldFrame,
   Frame,
   ContextMap,
@@ -68,18 +68,18 @@ const render = (
   type: ComponentType<DefaultProps> & ComponentStatics,
   props: DefaultProps,
   queue: Frame[],
-  visitor: Visitor,
+  opts: Options,
   element?: UserElement
 ) => {
   return shouldConstruct(type)
-    ? mountClassComponent(type, props, queue, visitor, element)
-    : mountFunctionComponent(type, props, queue, visitor, element)
+    ? mountClassComponent(type, props, queue, opts, element)
+    : mountFunctionComponent(type, props, queue, opts, element)
 }
 
 export const visitElement = (
   element: AbstractElement,
   queue: Frame[],
-  visitor: Visitor
+  opts: Options
 ): AbstractElement[] => {
   switch (typeOf(element)) {
     case REACT_SUSPENSE_TYPE:
@@ -128,7 +128,7 @@ export const visitElement = (
     case REACT_MEMO_TYPE: {
       const memoElement = ((element: any): MemoElement)
       const type = memoElement.type.type
-      const child = render(type, memoElement.props, queue, visitor)
+      const child = render(type, memoElement.props, queue, opts)
       return getChildrenArray(child)
     }
 
@@ -137,19 +137,20 @@ export const visitElement = (
       // Treat inner type as the component instead of React.forwardRef itself
       const type = refElement.type.render
       const props = refElement.props
-      const child = mountFunctionComponent(type, props, queue, visitor)
+      const child = mountFunctionComponent(type, props, queue, opts)
       return getChildrenArray(child)
     }
 
     case REACT_ELEMENT_TYPE: {
       const el = ((element: any): UserElement | DOMElement)
-      if (typeof el.type === 'string') {
+
+      if (typeof el.type === 'string' || opts.shouldSkip(el) === true) {
         // String elements can be skipped, so we just return children
         return getChildrenArray(el.props.children)
       } else {
         const userElement = ((element: any): UserElement)
         const { type, props } = userElement
-        const child = render(type, props, queue, visitor, userElement)
+        const child = render(type, props, queue, opts, userElement)
         return getChildrenArray(child)
       }
     }
@@ -167,7 +168,7 @@ const visitLoop = (
   traversalMap: Array<void | ContextMap>,
   traversalStore: Array<void | ContextEntry>,
   queue: Frame[],
-  visitor: Visitor
+  opts: Options
 ) => {
   const start = Date.now()
 
@@ -177,7 +178,7 @@ const visitLoop = (
 
     if (currIndex < currChildren.length) {
       const element = currChildren[currIndex]
-      const children = visitElement(element, queue, visitor)
+      const children = visitElement(element, queue, opts)
 
       traversalChildren.push(children)
       traversalIndex.push(0)
@@ -195,7 +196,7 @@ const visitLoop = (
 export const visitChildren = (
   init: AbstractElement[],
   queue: Frame[],
-  visitor: Visitor
+  opts: Options
 ) => {
   const traversalChildren: AbstractElement[][] = [init]
   const traversalIndex: number[] = [0]
@@ -208,7 +209,7 @@ export const visitChildren = (
     traversalMap,
     traversalStore,
     queue,
-    visitor
+    opts
   )
 
   if (traversalChildren.length > 0) {
@@ -228,11 +229,11 @@ export const visitChildren = (
 export const resumeVisitChildren = (
   frame: YieldFrame,
   queue: Frame[],
-  visitor: Visitor
+  opts: Options
 ) => {
   setCurrentIdentity(null)
   setCurrentContextMap(frame.contextMap)
   setCurrentContextMap(frame.contextStore)
 
-  visitLoop(frame.children, frame.index, frame.map, frame.store, queue, visitor)
+  visitLoop(frame.children, frame.index, frame.map, frame.store, queue, opts)
 }

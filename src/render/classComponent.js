@@ -4,7 +4,7 @@ import type { Node, ComponentType } from 'react'
 import { computeProps } from '../element'
 
 import type {
-  Visitor,
+  Options,
   Frame,
   ClassFrame,
   DefaultProps,
@@ -150,14 +150,14 @@ export const mount = (
   type: ComponentType<DefaultProps> & ComponentStatics,
   props: DefaultProps,
   queue: Frame[],
-  visitor: Visitor,
+  opts: Options,
   element?: UserElement
 ) => {
   setCurrentIdentity(null)
   const instance = createInstance(type, props)
 
   if (element !== undefined) {
-    const p = visitor(element, instance)
+    const p = opts.visitor(element, instance)
     if (typeof p === 'object' && p !== null && typeof p.then === 'function') {
       queue.push(makeFrame(type, instance, p))
       return null

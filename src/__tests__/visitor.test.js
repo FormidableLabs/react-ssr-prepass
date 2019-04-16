@@ -46,6 +46,11 @@ afterEach(() => {
 
 const Noop = () => null
 
+const noopOpts = {
+  visitor: () => undefined,
+  shouldSkip: () => false
+}
+
 describe('visitElement', () => {
   it('walks Fragments', () => {
     const element = (
@@ -55,7 +60,8 @@ describe('visitElement', () => {
         <Noop />
       </Fragment>
     )
-    const children = visitElement(element, [], () => {})
+
+    const children = visitElement(element, [], noopOpts)
     expect(children.length).toBe(2)
     expect(children[0].type).toBe(Noop)
     expect(children[1].type).toBe(Noop)
@@ -63,7 +69,7 @@ describe('visitElement', () => {
 
   it('walks misc. mode-like components', () => {
     const assert = element => {
-      const children = visitElement(element, [], () => {})
+      const children = visitElement(element, [], noopOpts)
       expect(children.length).toBe(1)
       expect(children[0].type).toBe(Noop)
     }
@@ -134,7 +140,7 @@ describe('visitElement', () => {
 
   it('skips over invalid Consumer components', () => {
     const Context = createContext('default')
-    const children = visitElement(<Context.Consumer />, [], () => {})
+    const children = visitElement(<Context.Consumer />, [], noopOpts)
     expect(children.length).toBe(0)
   })
 
@@ -145,7 +151,7 @@ describe('visitElement', () => {
 
     const Test = React.lazy(defer)
     const queue = []
-    const children = visitElement(<Test />, queue, () => {})
+    const children = visitElement(<Test />, queue, noopOpts)
 
     expect(children.length).toBe(0)
     expect(queue.length).toBe(1)
@@ -163,21 +169,21 @@ describe('visitElement', () => {
 
   it('walks over forwardRef components', () => {
     const Test = React.forwardRef(() => <Noop />)
-    const children = visitElement(<Test />, [], () => {})
+    const children = visitElement(<Test />, [], noopOpts)
     expect(children.length).toBe(1)
     expect(children[0].type).toBe(Noop)
   })
 
   it('walks over memo components', () => {
     const Test = React.memo(() => <Noop />)
-    const children = visitElement(<Test />, [], () => {})
+    const children = visitElement(<Test />, [], noopOpts)
     expect(children.length).toBe(1)
     expect(children[0].type).toBe(Noop)
   })
 
   it('returns nothing for portal components', () => {
     const portal = createPortal(<Noop />, document.createElement('div'))
-    const children = visitElement(portal, [], () => {})
+    const children = visitElement(portal, [], noopOpts)
     expect(children.length).toBe(0)
   })
 
@@ -203,14 +209,16 @@ describe('visitElement', () => {
       }
     }
 
-    const visitor = jest.fn()
-    const children = visitElement(<Test />, [], visitor)
+    const visitor = jest.fn(() => undefined)
+    const shouldSkip = jest.fn(() => false)
+    const children = visitElement(<Test />, [], { visitor, shouldSkip })
 
     expect(children.length).toBe(1)
     expect(children[0].type).toBe(Noop)
     expect(children[0].props.children).toBe('b')
     expect(onUnmount).not.toHaveBeenCalled()
     expect(visitor).toHaveBeenCalledWith(<Test />, expect.any(Test))
+    expect(shouldSkip).toHaveBeenCalledWith(<Test />)
   })
 
   it('renders class components with componentWillMount', () => {
@@ -236,7 +244,7 @@ describe('visitElement', () => {
         }
       }
 
-      const children = visitElement(<Test />, [], () => {})
+      const children = visitElement(<Test />, [], noopOpts)
       expect(children.length).toBe(1)
       expect(children[0].type).toBe(Noop)
       expect(children[0].props.children).toBe('b')
@@ -266,10 +274,10 @@ describe('visitElement', () => {
     Outer.childContextTypes = { value: Noop }
 
     // We first populate the context
-    visitElement(<Outer />, [], () => {})
+    visitElement(<Outer />, [], noopOpts)
 
     // Then manually mount Inner afterwards
-    const children = visitElement(<Inner />, [], () => {})
+    const children = visitElement(<Inner />, [], noopOpts)
 
     expect(flushPrevContextMap()).toEqual({ value: undefined })
     expect(children.length).toBe(1)
@@ -289,12 +297,14 @@ describe('visitElement', () => {
       return <Noop>{value}</Noop>
     }
 
-    const visitor = jest.fn()
-    const children = visitElement(<Test />, [], visitor)
+    const visitor = jest.fn(() => undefined)
+    const shouldSkip = jest.fn(() => false)
+    const children = visitElement(<Test />, [], { visitor, shouldSkip })
     expect(children.length).toBe(1)
     expect(children[0].type).toBe(Noop)
     expect(children[0].props.children).toBe('d')
     expect(visitor).toHaveBeenCalledWith(<Test />)
+    expect(shouldSkip).toHaveBeenCalledWith(<Test />)
   })
 
   it('renders function components with reducers', () => {
@@ -306,12 +316,14 @@ describe('visitElement', () => {
       return <Noop>{value}</Noop>
     }
 
-    const visitor = jest.fn()
-    const children = visitElement(<Test />, [], visitor)
+    const visitor = jest.fn(() => undefined)
+    const shouldSkip = jest.fn(() => false)
+    const children = visitElement(<Test />, [], { visitor, shouldSkip })
     expect(children.length).toBe(1)
     expect(children[0].type).toBe(Noop)
     expect(children[0].props.children).toBe(1)
     expect(visitor).toHaveBeenCalledWith(<Test />)
+    expect(shouldSkip).toHaveBeenCalledWith(<Test />)
   })
 
   it('renders function components with context', () => {
@@ -321,13 +333,19 @@ describe('visitElement', () => {
       return <Noop>{value}</Noop>
     }
 
+    const visitor = jest.fn(() => undefined)
+    const shouldSkip = jest.fn(() => false)
+    const opts = { visitor, shouldSkip }
+
     // We first populate the context
-    visitElement(<Context.Provider value="test" />, [], () => {})
+    visitElement(<Context.Provider value="test" />, [], opts)
     // Then manually mount Test afterwards
-    const children = visitElement(<Test />, [], () => {})
+    const children = visitElement(<Test />, [], opts)
     expect(children.length).toBe(1)
     expect(children[0].type).toBe(Noop)
     expect(children[0].props.children).toBe('test')
+    expect(visitor).toHaveBeenCalledWith(<Test />)
+    expect(shouldSkip).toHaveBeenCalledWith(<Test />)
   })
 
   it('renders function components with default props', () => {
@@ -335,10 +353,17 @@ describe('visitElement', () => {
 
     Test.defaultProps = { value: 'default' }
 
-    const childA = visitElement(<Test />, [], () => {})[0]
+    const visitor = jest.fn(() => undefined)
+    const shouldSkip = jest.fn(() => false)
+    const opts = { visitor, shouldSkip }
+
+    const childA = visitElement(<Test />, [], opts)[0]
     expect(childA.props.children).toBe('default')
 
-    const childB = visitElement(<Test value="test" />, [], () => {})[0]
+    expect(visitor).toHaveBeenCalledWith(<Test />)
+    expect(shouldSkip).toHaveBeenCalledWith(<Test />)
+
+    const childB = visitElement(<Test value="test" />, [], opts)[0]
     expect(childB.props.children).toBe('test')
   })
 })
