@@ -11,8 +11,10 @@ import {
 
 import type {
   Visitor,
+  YieldFrame,
   Frame,
   ContextMap,
+  ContextEntry,
   DefaultProps,
   ComponentStatics,
   LazyElement,
@@ -28,12 +30,17 @@ import type {
 } from './types'
 
 import {
+  getCurrentContextMap,
+  getCurrentContextStore,
+  setCurrentContextMap,
+  setCurrentContextStore,
   flushPrevContextMap,
   flushPrevContextStore,
   restoreContextMap,
   restoreContextStore,
   readContextValue,
-  setContextValue
+  setContextValue,
+  setCurrentIdentity
 } from './internals'
 
 import {
@@ -50,6 +57,12 @@ import {
   REACT_MEMO_TYPE,
   REACT_LAZY_TYPE
 } from './symbols'
+
+const makeImmediatePromise = () => {
+  return new Promise(resolve => {
+    setImmediate(resolve)
+  })
+}
 
 const render = (
   type: ComponentType<DefaultProps> & ComponentStatics,
@@ -148,39 +161,78 @@ export const visitElement = (
   }
 }
 
-/** The context (legacy and createContext are separate) are kept
-    as global state. As we're walking the tree depth-first, we
-    simply overwrite it with new values. This is recursive and
-    as we walk back upwards (after visitChildren) we restore
-    the value that we have previously overwritten. */
-const visitChild = (
-  child: AbstractElement,
+const visitLoop = (
+  traversalChildren: AbstractElement[][],
+  traversalIndex: number[],
+  traversalMap: Array<void | ContextMap>,
+  traversalStore: Array<void | ContextEntry>,
   queue: Frame[],
   visitor: Visitor
 ) => {
-  const children = visitElement(child, queue, visitor)
-  // Flush changes (if any) that have been made to the context
-  const prevMap = flushPrevContextMap()
-  const prevStore = flushPrevContextStore()
+  const start = Date.now()
 
-  visitChildren(children, queue, visitor)
+  while (traversalChildren.length > 0 && Date.now() - start <= 10) {
+    const currChildren = traversalChildren[traversalChildren.length - 1]
+    const currIndex = traversalIndex[traversalIndex.length - 1]++
 
-  // Restore context changes after children have been walked
-  if (prevMap !== undefined) {
-    restoreContextMap(prevMap)
-  }
+    if (currIndex < currChildren.length) {
+      const element = currChildren[currIndex]
+      const children = visitElement(element, queue, visitor)
 
-  if (prevStore !== undefined) {
-    restoreContextStore(prevStore)
+      traversalChildren.push(children)
+      traversalIndex.push(0)
+      traversalMap.push(flushPrevContextMap())
+      traversalStore.push(flushPrevContextStore())
+    } else {
+      traversalChildren.pop()
+      traversalIndex.pop()
+      restoreContextMap(traversalMap.pop())
+      restoreContextStore(traversalStore.pop())
+    }
   }
 }
 
 export const visitChildren = (
-  children: AbstractElement[],
+  init: AbstractElement[],
   queue: Frame[],
   visitor: Visitor
 ) => {
-  for (let i = 0, l = children.length; i < l; i++) {
-    visitChild(children[i], queue, visitor)
+  const traversalChildren: AbstractElement[][] = [init]
+  const traversalIndex: number[] = [0]
+  const traversalMap: Array<void | ContextMap> = [undefined]
+  const traversalStore: Array<void | ContextEntry> = [undefined]
+
+  visitLoop(
+    traversalChildren,
+    traversalIndex,
+    traversalMap,
+    traversalStore,
+    queue,
+    visitor
+  )
+
+  if (traversalChildren.length > 0) {
+    queue.push({
+      contextMap: getCurrentContextMap(),
+      contextStore: getCurrentContextStore(),
+      kind: 'frame.yield',
+      thenable: makeImmediatePromise(),
+      children: traversalChildren,
+      index: traversalIndex,
+      map: traversalMap,
+      store: traversalStore
+    })
   }
+}
+
+export const resumeVisitChildren = (
+  frame: YieldFrame,
+  queue: Frame[],
+  visitor: Visitor
+) => {
+  setCurrentIdentity(null)
+  setCurrentContextMap(frame.contextMap)
+  setCurrentContextMap(frame.contextStore)
+
+  visitLoop(frame.children, frame.index, frame.map, frame.store, queue, visitor)
 }

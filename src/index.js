@@ -2,7 +2,7 @@
 
 import React, { type Node, type Element } from 'react'
 import type { Visitor, Frame, AbstractElement } from './types'
-import { visitChildren } from './visitor'
+import { visitChildren, resumeVisitChildren } from './visitor'
 import { getChildrenArray } from './element'
 
 import {
@@ -42,20 +42,31 @@ const flushFrames = (queue: Frame[], visitor: Visitor): Promise<void> => {
     let children = []
 
     // Update the component after we've suspended to rerender it,
-    // at which point we'll actually get its children
+    // at which point we'll actually get its children and continue
+    // walking the tree
     if (frame.kind === 'frame.class') {
-      children = getChildrenArray(updateClassComponent(queue, frame))
+      visitChildren(
+        getChildrenArray(updateClassComponent(queue, frame)),
+        queue,
+        visitor
+      )
     } else if (frame.kind === 'frame.hooks') {
-      children = getChildrenArray(updateFunctionComponent(queue, frame))
+      visitChildren(
+        getChildrenArray(updateFunctionComponent(queue, frame)),
+        queue,
+        visitor
+      )
     } else if (frame.kind === 'frame.lazy') {
-      children = getChildrenArray(updateLazyComponent(queue, frame))
+      visitChildren(
+        getChildrenArray(updateLazyComponent(queue, frame)),
+        queue,
+        visitor
+      )
+    } else if (frame.kind === 'frame.yield') {
+      resumeVisitChildren(frame, queue, visitor)
     }
 
-    // Now continue walking the previously suspended component's
-    // children (which might also suspend)
-    visitChildren(children, queue, visitor)
     ReactCurrentDispatcher.current = prevDispatcher
-
     return flushFrames(queue, visitor)
   })
 }

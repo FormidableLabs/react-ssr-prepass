@@ -4,7 +4,8 @@ import type {
   AbstractContext,
   UserElement,
   ContextMap,
-  ContextStore
+  ContextStore,
+  ContextEntry
 } from '../types'
 
 /** The context is kept as a Map from a Context value to the current
@@ -16,8 +17,6 @@ import type {
    before continuing to walk the tree.
    After walking the children they can be restored.
    This way the context recursively restores itself on the way up. */
-
-type ContextEntry = [AbstractContext, mixed]
 
 let currentContextStore: ContextStore = new Map()
 let currentContextMap: ContextMap = {}
@@ -42,12 +41,16 @@ export const flushPrevContextStore = (): void | ContextEntry => {
   return prev
 }
 
-export const restoreContextMap = (prev: ContextMap) => {
-  Object.assign(currentContextMap, prev)
+export const restoreContextMap = (prev: void | ContextMap) => {
+  if (prev !== undefined) {
+    Object.assign(currentContextMap, prev)
+  }
 }
 
-export const restoreContextStore = (prev: ContextEntry) => {
-  currentContextStore.set(prev[0], prev[1])
+export const restoreContextStore = (prev: void | ContextEntry) => {
+  if (prev !== undefined) {
+    currentContextStore.set(prev[0], prev[1])
+  }
 }
 
 export const setCurrentContextMap = (map: ContextMap) => {

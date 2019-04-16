@@ -3,8 +3,8 @@
 import type { ComponentType } from 'react'
 import type { Identity } from '../internals'
 import type { LazyComponent } from '../types'
-import type { DefaultProps, ComponentStatics } from './element'
-import type { ContextMap, ContextStore, Hook } from './state'
+import type { ContextMap, ContextStore, ContextEntry, Hook } from './state'
+import type { AbstractElement, DefaultProps, ComponentStatics } from './element'
 
 export type BaseFrame = {
   contextMap: ContextMap,
@@ -35,4 +35,13 @@ export type HooksFrame = BaseFrame & {
   hook: Hook | null
 }
 
-export type Frame = ClassFrame | HooksFrame | LazyFrame
+/** Description of a pause to yield to the event loop */
+export type YieldFrame = BaseFrame & {
+  kind: 'frame.yield',
+  children: AbstractElement[][],
+  index: number[],
+  map: Array<void | ContextMap>,
+  store: Array<void | ContextEntry>
+}
+
+export type Frame = ClassFrame | HooksFrame | LazyFrame | YieldFrame
