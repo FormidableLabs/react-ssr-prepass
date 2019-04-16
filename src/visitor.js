@@ -58,12 +58,6 @@ import {
   REACT_LAZY_TYPE
 } from './symbols'
 
-const makeImmediatePromise = () => {
-  return new Promise(resolve => {
-    setImmediate(resolve)
-  })
-}
-
 const render = (
   type: ComponentType<DefaultProps> & ComponentStatics,
   props: DefaultProps,
@@ -171,7 +165,7 @@ const visitLoop = (
 ) => {
   const start = Date.now()
 
-  while (traversalChildren.length > 0 && Date.now() - start <= 10) {
+  while (traversalChildren.length > 0 && Date.now() - start <= 5) {
     const currChildren = traversalChildren[traversalChildren.length - 1]
     const currIndex = traversalIndex[traversalIndex.length - 1]++
 
@@ -199,8 +193,8 @@ export const visitChildren = (
 ) => {
   const traversalChildren: AbstractElement[][] = [init]
   const traversalIndex: number[] = [0]
-  const traversalMap: Array<void | ContextMap> = [undefined]
-  const traversalStore: Array<void | ContextEntry> = [undefined]
+  const traversalMap: Array<void | ContextMap> = [flushPrevContextMap()]
+  const traversalStore: Array<void | ContextEntry> = [flushPrevContextStore()]
 
   visitLoop(
     traversalChildren,
@@ -212,11 +206,11 @@ export const visitChildren = (
   )
 
   if (traversalChildren.length > 0) {
-    queue.push({
+    queue.unshift({
       contextMap: getCurrentContextMap(),
       contextStore: getCurrentContextStore(),
+      thenable: Promise.resolve(),
       kind: 'frame.yield',
-      thenable: makeImmediatePromise(),
       children: traversalChildren,
       index: traversalIndex,
       map: traversalMap,
@@ -232,7 +226,7 @@ export const resumeVisitChildren = (
 ) => {
   setCurrentIdentity(null)
   setCurrentContextMap(frame.contextMap)
-  setCurrentContextMap(frame.contextStore)
+  setCurrentContextStore(frame.contextStore)
 
   visitLoop(frame.children, frame.index, frame.map, frame.store, queue, visitor)
 }

@@ -1,7 +1,7 @@
 // @flow
 
 import React, { type Node, type Element } from 'react'
-import type { Visitor, Frame, AbstractElement } from './types'
+import type { Visitor, YieldFrame, Frame, AbstractElement } from './types'
 import { visitChildren, resumeVisitChildren } from './visitor'
 import { getChildrenArray } from './element'
 
@@ -28,12 +28,24 @@ let prevDispatcher = ReactCurrentDispatcher.current
     the queue. Hence we recursively look at suspended components in
     this queue, wait for their promises to resolve, and continue
     calling visitChildren on their children. */
-const flushFrames = (queue: Frame[], visitor: Visitor): Promise<void> => {
-  if (queue.length === 0) {
-    return Promise.resolve()
-  }
+const updateWithFrame = (
+  frame: Frame,
+  queue: Frame[],
+  visitor: Visitor
+): Promise<void> => {
+  if (frame.kind === 'frame.yield') {
+    const yieldFrame: YieldFrame = frame
 
-  const frame = queue.shift()
+    return new Promise(resolve => {
+      setImmediate(() => {
+        prevDispatcher = ReactCurrentDispatcher.current
+        ReactCurrentDispatcher.current = Dispatcher
+        resumeVisitChildren(yieldFrame, queue, visitor)
+        ReactCurrentDispatcher.current = prevDispatcher
+        resolve()
+      })
+    })
+  }
 
   return frame.thenable.then(() => {
     prevDispatcher = ReactCurrentDispatcher.current
@@ -42,33 +54,30 @@ const flushFrames = (queue: Frame[], visitor: Visitor): Promise<void> => {
     let children = []
 
     // Update the component after we've suspended to rerender it,
-    // at which point we'll actually get its children and continue
-    // walking the tree
+    // at which point we'll actually get its children
     if (frame.kind === 'frame.class') {
-      visitChildren(
-        getChildrenArray(updateClassComponent(queue, frame)),
-        queue,
-        visitor
-      )
+      children = getChildrenArray(updateClassComponent(queue, frame))
     } else if (frame.kind === 'frame.hooks') {
-      visitChildren(
-        getChildrenArray(updateFunctionComponent(queue, frame)),
-        queue,
-        visitor
-      )
+      children = getChildrenArray(updateFunctionComponent(queue, frame))
     } else if (frame.kind === 'frame.lazy') {
-      visitChildren(
-        getChildrenArray(updateLazyComponent(queue, frame)),
-        queue,
-        visitor
-      )
-    } else if (frame.kind === 'frame.yield') {
-      resumeVisitChildren(frame, queue, visitor)
+      children = getChildrenArray(updateLazyComponent(queue, frame))
     }
 
+    // Now continue walking the previously suspended component's
+    // children (which might also suspend)
+    visitChildren(children, queue, visitor)
     ReactCurrentDispatcher.current = prevDispatcher
-    return flushFrames(queue, visitor)
   })
+}
+
+const flushFrames = (queue: Frame[], visitor: Visitor): Promise<void> => {
+  if (queue.length === 0) {
+    return Promise.resolve()
+  }
+
+  return updateWithFrame(queue.shift(), queue, visitor).then(() =>
+    flushFrames(queue, visitor)
+  )
 }
 
 const defaultVisitor = () => {}
