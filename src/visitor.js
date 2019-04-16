@@ -128,11 +128,18 @@ export const visitElement = (
 
     case REACT_FORWARD_REF_TYPE: {
       const refElement = ((element: any): ForwardRefElement)
-      // Treat inner type as the component instead of React.forwardRef itself
-      const type = refElement.type.render
-      const props = refElement.props
-      const child = mountFunctionComponent(type, props, queue, visitor)
-      return getChildrenArray(child)
+      if (typeof refElement.type.styledComponentId === 'string') {
+        // This is an optimization that's specific to styled-components
+        // We can safely skip them and return their children
+        return getChildrenArray(refElement.props.children)
+      } else {
+        const {
+          props,
+          type: { render }
+        } = refElement
+        const child = mountFunctionComponent(render, props, queue, visitor)
+        return getChildrenArray(child)
+      }
     }
 
     case REACT_ELEMENT_TYPE: {

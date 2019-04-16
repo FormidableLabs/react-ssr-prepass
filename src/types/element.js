@@ -103,7 +103,8 @@ export type MemoElement = {
 export type ForwardRefElement = {
   type: {
     render: ComponentType<DefaultProps> & ComponentStatics,
-    $$typeof: typeof REACT_FORWARD_REF_TYPE
+    $$typeof: typeof REACT_FORWARD_REF_TYPE,
+    styledComponentId?: string // styled-components specific property
   },
   props: DefaultProps,
   $$typeof: typeof REACT_ELEMENT_TYPE
