@@ -132,9 +132,12 @@ export const visitElement = (
 
     case REACT_FORWARD_REF_TYPE: {
       const refElement = ((element: any): ForwardRefElement)
-      if (typeof refElement.type.styledComponentId === 'string') {
+      if (
+        typeof refElement.type.styledComponentId === 'string' &&
+        typeof refElement.type.target !== 'function'
+      ) {
         // This is an optimization that's specific to styled-components
-        // We can safely skip them and return their children
+        // We can safely skip them if they're not wrapping a component
         return getChildrenArray(refElement.props.children)
       } else {
         const {
