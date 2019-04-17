@@ -6,7 +6,9 @@ import { typeOf, shouldConstruct, getChildrenArray } from './element'
 import {
   mountFunctionComponent,
   mountClassComponent,
-  mountLazyComponent
+  mountLazyComponent,
+  mountStyledComponent,
+  isStyledElement
 } from './render'
 
 import type {
@@ -61,6 +63,9 @@ import {
 // Time in ms after which the otherwise synchronous visitor yields so that
 // the event loop is not interrupted for too long
 const YIELD_AFTER_MS = process.env.NODE_ENV !== 'production' ? 20 : 5
+
+// A no-op function for styled-components' ComponentStyle class
+const NOOP_GEN_CLASSNAME = () => ''
 
 const render = (
   type: ComponentType<DefaultProps> & ComponentStatics,
@@ -132,21 +137,19 @@ export const visitElement = (
 
     case REACT_FORWARD_REF_TYPE: {
       const refElement = ((element: any): ForwardRefElement)
-      if (
-        typeof refElement.type.styledComponentId === 'string' &&
-        typeof refElement.type.target !== 'function'
-      ) {
-        // This is an optimization that's specific to styled-components
-        // We can safely skip them if they're not wrapping a component
-        return getChildrenArray(refElement.props.children)
+
+      // If we find a StyledComponent, we trigger a specific optimisation
+      // that allows quick rendering of them without computing styles
+      let child = null
+      if (isStyledElement(refElement)) {
+        child = mountStyledComponent(refElement, queue, visitor)
       } else {
-        const {
-          props,
-          type: { render }
-        } = refElement
-        const child = mountFunctionComponent(render, props, queue, visitor)
-        return getChildrenArray(child)
+        const { render } = refElement.type
+        const props = refElement.props
+        child = mountFunctionComponent(render, props, queue, visitor)
       }
+
+      return getChildrenArray(child)
     }
 
     case REACT_ELEMENT_TYPE: {
