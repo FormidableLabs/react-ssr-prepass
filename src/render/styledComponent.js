@@ -2,7 +2,7 @@
 
 import { createElement, type ComponentType, type Node } from 'react'
 
-import { getChildrenArray } from '../element'
+import { getChildrenArray, computeProps } from '../element'
 import { readContextValue } from '../internals'
 import { mount as mountFunctionComponent } from './functionComponent'
 
@@ -17,6 +17,14 @@ import type {
 let styledComponents: any
 try {
   styledComponents = require('styled-components')
+
+  if (
+    styledComponents.__DO_NOT_USE_OR_YOU_WILL_BE_HAUNTED_BY_SPOOKY_GHOSTS ===
+      undefined ||
+    styledComponents.ThemeContext === undefined
+  ) {
+    styledComponents = undefined
+  }
 } catch (_error) {}
 
 type AttrsFn = (context: mixed) => DefaultProps
@@ -70,25 +78,25 @@ export const mount = (
   queue: Frame[],
   visitor: Visitor
 ): Node => {
-  if (
-    styledComponents === undefined ||
-    styledComponents.ThemeContext === undefined
-  ) {
+  if (styledComponents === undefined) {
     // styled-components is not installed or incompatible, so the component will have to be
     // mounted normally
     const { render } = element.type
     return mountFunctionComponent(render, element.props, queue, visitor)
-  } else if (typeof element.type.target !== 'function') {
-    // StyledComponents rendering DOM elements can safely be skipped like normal DOM elements
-    return element.props.children || null
   }
 
-  const type = ((element.type: any): StyledComponentStatics)
-
   // Imitate styled-components' attrs props without computing styles
+  const type = ((element.type: any): StyledComponentStatics)
   const theme = readContextValue(styledComponents.ThemeContext) || {}
   const attrs: Attr[] = Array.isArray(type.attrs) ? type.attrs : [type.attrs]
-  const props = computeAttrsProps(attrs, element.props, theme)
+  const computedProps = computeProps(element.props, (type: any).defaultProps)
+  const props = computeAttrsProps(attrs, computedProps, theme)
+  const as = props.as || type.target
 
-  return createElement((type.target: any), props)
+  if (typeof as !== 'function') {
+    // StyledComponents rendering DOM elements can safely be skipped like normal DOM elements
+    return element.props.children || null
+  } else {
+    return createElement((as: any), props)
+  }
 }
