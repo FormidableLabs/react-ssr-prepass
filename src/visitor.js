@@ -196,14 +196,28 @@ const visitLoop = (
       restoreContextMap(traversalMap.pop())
       restoreContextStore(traversalStore.pop())
     }
-  }
 
-  if (Date.now() - start > YIELD_AFTER_MS) {
-    return true
+    if (Date.now() - start > YIELD_AFTER_MS) {
+      return true
+    }
   }
 
   return false
 }
+
+const makeYieldFrame = (
+  traversalChildren: AbstractElement[][],
+  traversalMap: Array<void | ContextMap>,
+  traversalStore: Array<void | ContextEntry>
+): Frame => ({
+  contextMap: getCurrentContextMap(),
+  contextStore: getCurrentContextStore(),
+  thenable: Promise.resolve(),
+  kind: 'frame.yield',
+  children: traversalChildren,
+  map: traversalMap,
+  store: traversalStore
+})
 
 export const visitChildren = (
   init: AbstractElement[],
@@ -213,6 +227,7 @@ export const visitChildren = (
   const traversalChildren: AbstractElement[][] = [init]
   const traversalMap: Array<void | ContextMap> = [flushPrevContextMap()]
   const traversalStore: Array<void | ContextEntry> = [flushPrevContextStore()]
+
   const hasYielded = visitLoop(
     traversalChildren,
     traversalMap,
@@ -222,15 +237,9 @@ export const visitChildren = (
   )
 
   if (hasYielded) {
-    queue.unshift({
-      contextMap: getCurrentContextMap(),
-      contextStore: getCurrentContextStore(),
-      thenable: Promise.resolve(),
-      kind: 'frame.yield',
-      children: traversalChildren,
-      map: traversalMap,
-      store: traversalStore
-    })
+    queue.unshift(
+      makeYieldFrame(traversalChildren, traversalMap, traversalStore)
+    )
   }
 }
 
@@ -243,5 +252,15 @@ export const resumeVisitChildren = (
   setCurrentContextMap(frame.contextMap)
   setCurrentContextStore(frame.contextStore)
 
-  visitLoop(frame.children, frame.map, frame.store, queue, visitor)
+  const hasYielded = visitLoop(
+    frame.children,
+    frame.map,
+    frame.store,
+    queue,
+    visitor
+  )
+
+  if (hasYielded) {
+    queue.unshift(makeYieldFrame(frame.children, frame.map, frame.store))
+  }
 }

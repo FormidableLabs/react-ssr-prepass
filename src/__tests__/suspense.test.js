@@ -18,7 +18,7 @@ describe('renderPrepass', () => {
 
       const Outer = () => {
         const start = Date.now()
-        while (Date.now() - start < 21) {}
+        while (Date.now() - start < 40) {}
         return <Inner />
       }
 
@@ -45,10 +45,10 @@ describe('renderPrepass', () => {
         return null
       }
 
-      const Wait = () => {
+      const Wait = props => {
         const start = Date.now()
         while (Date.now() - start < 21) {}
-        return <Inner />
+        return props.children
       }
 
       class Outer extends Component {
@@ -57,7 +57,13 @@ describe('renderPrepass', () => {
         }
 
         render() {
-          return <Wait />
+          return (
+            <Wait>
+              <Wait>
+                <Inner />
+              </Wait>
+            </Wait>
+          )
         }
       }
 
