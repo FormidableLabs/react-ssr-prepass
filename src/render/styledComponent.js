@@ -83,6 +83,7 @@ const computeAttrsProps = (input: Attr[], props: any, theme: any): any => {
 /** Checks whether a ForwardRefElement is a StyledComponent element */
 export const isStyledElement = (element: ForwardRefElement): boolean %checks =>
   styledComponents !== undefined &&
+  typeof element.type.target !== undefined &&
   typeof element.type.styledComponentId === 'string'
 
 /** This is an optimised faux mounting strategy for StyledComponents.
