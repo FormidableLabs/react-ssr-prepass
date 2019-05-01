@@ -7,6 +7,7 @@ import { readContextValue } from '../internals'
 import { mount as mountFunctionComponent } from './functionComponent'
 
 import type {
+  AbstractElement,
   DefaultProps,
   ForwardRefElement,
   Frame,
@@ -89,7 +90,7 @@ export const isStyledElement = (element: ForwardRefElement): boolean %checks =>
 /** This is an optimised faux mounting strategy for StyledComponents.
     It is only enabled when styled-components is installed and the component
     can safely be skipped */
-export const mount = (element: ForwardRefElement): Node => {
+export const mount = (element: ForwardRefElement): AbstractElement[] => {
   // Imitate styled-components' attrs props without computing styles
   const type = ((element.type: any): StyledComponentStatics)
   const attrs: Attr[] = Array.isArray(type.attrs) ? type.attrs : [type.attrs]
@@ -101,9 +102,9 @@ export const mount = (element: ForwardRefElement): Node => {
 
   // StyledComponents rendering DOM elements can safely be skipped like normal DOM elements
   if (typeof as === 'string') {
-    return children
+    return getChildrenArray(children)
   } else {
     delete props.as
-    return createElement((as: any), props, children)
+    return [(createElement((as: any), props, children): any)]
   }
 }

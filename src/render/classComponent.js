@@ -151,17 +151,15 @@ export const mount = (
   props: DefaultProps,
   queue: Frame[],
   visitor: Visitor,
-  element?: UserElement
+  element: UserElement
 ) => {
   setCurrentIdentity(null)
-  const instance = createInstance(type, props)
 
-  if (element !== undefined) {
-    const p = visitor(element, instance)
-    if (typeof p === 'object' && p !== null && typeof p.then === 'function') {
-      queue.push(makeFrame(type, instance, p))
-      return null
-    }
+  const instance = createInstance(type, props)
+  const promise = visitor(element, instance)
+  if (promise) {
+    queue.push(makeFrame(type, instance, promise))
+    return null
   }
 
   return render(type, instance, queue)

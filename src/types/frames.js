@@ -39,7 +39,6 @@ export type HooksFrame = BaseFrame & {
 export type YieldFrame = BaseFrame & {
   kind: 'frame.yield',
   children: AbstractElement[][],
-  index: number[],
   map: Array<void | ContextMap>,
   store: Array<void | ContextEntry>
 }
