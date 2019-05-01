@@ -57,8 +57,8 @@
     }
   },
   "peerDependencies": {
-    "react": "^16.6.0",
-    "react-is": "^16.6.0"
+    "react": "^16.8.0",
+    "react-is": "^16.8.0"
   },
   "devDependencies": {
     "@babel/core": "^7.3.4",
