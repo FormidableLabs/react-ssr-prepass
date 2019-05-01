@@ -22,3 +22,8 @@ export {
   mount as mountClassComponent,
   update as updateClassComponent
 } from './classComponent'
+
+export {
+  isStyledElement,
+  mount as mountStyledComponent
+} from './styledComponent'

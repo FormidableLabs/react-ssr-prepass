@@ -56,16 +56,16 @@ const updateWithFrame = (
     // Update the component after we've suspended to rerender it,
     // at which point we'll actually get its children
     if (frame.kind === 'frame.class') {
-      children = getChildrenArray(updateClassComponent(queue, frame))
+      children = updateClassComponent(queue, frame)
     } else if (frame.kind === 'frame.hooks') {
-      children = getChildrenArray(updateFunctionComponent(queue, frame))
+      children = updateFunctionComponent(queue, frame)
     } else if (frame.kind === 'frame.lazy') {
-      children = getChildrenArray(updateLazyComponent(queue, frame))
+      children = updateLazyComponent(queue, frame)
     }
 
     // Now continue walking the previously suspended component's
     // children (which might also suspend)
-    visitChildren(children, queue, visitor)
+    visitChildren(getChildrenArray(children), queue, visitor)
     ReactCurrentDispatcher.current = prevDispatcher
   })
 }
@@ -80,11 +80,11 @@ const flushFrames = (queue: Frame[], visitor: Visitor): Promise<void> => {
   )
 }
 
-const defaultVisitor = () => {}
+const defaultVisitor = () => undefined
 
 const renderPrepass = (element: Node, visitor?: Visitor): Promise<void> => {
   const queue: Frame[] = []
-  let fn = visitor !== undefined ? visitor : defaultVisitor
+  const fn = visitor !== undefined ? visitor : defaultVisitor
 
   // Context state is kept globally and is modified in-place.
   // Before we start walking the element tree we need to reset

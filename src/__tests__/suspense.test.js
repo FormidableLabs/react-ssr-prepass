@@ -18,7 +18,7 @@ describe('renderPrepass', () => {
 
       const Outer = () => {
         const start = Date.now()
-        while (Date.now() - start < 21) {}
+        while (Date.now() - start < 40) {}
         return <Inner />
       }
 
@@ -34,6 +34,78 @@ describe('renderPrepass', () => {
 
       return render$.then(() => {
         expect(Inner).toHaveBeenCalledTimes(1)
+      })
+    })
+
+    it('preserves the correct legacy context values across yields', () => {
+      let called = false
+      const Inner = (_, context) => {
+        expect(context.test).toBe(123)
+        called = true
+        return null
+      }
+
+      const Wait = props => {
+        const start = Date.now()
+        while (Date.now() - start < 21) {}
+        return props.children
+      }
+
+      class Outer extends Component {
+        getChildContext() {
+          return { test: 123 }
+        }
+
+        render() {
+          return (
+            <Wait>
+              <Wait>
+                <Inner />
+              </Wait>
+            </Wait>
+          )
+        }
+      }
+
+      Inner.contextTypes = { test: null }
+      Outer.childContextTypes = { test: null }
+
+      const render$ = renderPrepass(<Outer />)
+      expect(called).toBe(false)
+      return render$.then(() => {
+        expect(called).toBe(true)
+      })
+    })
+
+    it('preserves the correct context values across yields', () => {
+      const Context = createContext(null)
+
+      let called = false
+      const Inner = () => {
+        const value = useContext(Context)
+        expect(value).toBe(123)
+        called = true
+        return null
+      }
+
+      const Wait = () => {
+        const start = Date.now()
+        while (Date.now() - start < 21) {}
+        return <Inner />
+      }
+
+      const Outer = () => {
+        return (
+          <Context.Provider value={123}>
+            <Wait />
+          </Context.Provider>
+        )
+      }
+
+      const render$ = renderPrepass(<Outer />)
+      expect(called).toBe(false)
+      return render$.then(() => {
+        expect(called).toBe(true)
       })
     })
 

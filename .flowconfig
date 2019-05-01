@@ -4,6 +4,7 @@
 
 [untyped]
 .*/node_modules/react-is/.*
+.*/node_modules/styled-components/.*
 
 [libs]
 types/

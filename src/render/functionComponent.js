@@ -61,8 +61,6 @@ const render = (
 
     queue.push(makeFrame(type, props, error))
     return null
-  } finally {
-    setCurrentIdentity(null)
   }
 }
 
@@ -72,17 +70,15 @@ export const mount = (
   props: DefaultProps,
   queue: Frame[],
   visitor: Visitor,
-  element?: UserElement
+  element: UserElement
 ): Node => {
   setFirstHook(null)
   setCurrentIdentity(makeIdentity())
 
-  if (element !== undefined) {
-    const p = visitor(element)
-    if (typeof p === 'object' && p !== null && typeof p.then === 'function') {
-      queue.push(makeFrame(type, props, p))
-      return null
-    }
+  const promise = visitor(element)
+  if (promise) {
+    queue.push(makeFrame(type, props, promise))
+    return null
   }
 
   return render(type, props, queue)

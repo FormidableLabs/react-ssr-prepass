@@ -1,12 +1,20 @@
 // @flow
 
-import type { Node, ComponentType } from 'react'
-import { typeOf, shouldConstruct, getChildrenArray } from './element'
+import { type Node, type ComponentType, createElement } from 'react'
+
+import {
+  typeOf,
+  shouldConstruct,
+  getChildrenArray,
+  computeProps
+} from './element'
 
 import {
   mountFunctionComponent,
   mountClassComponent,
-  mountLazyComponent
+  mountLazyComponent,
+  mountStyledComponent,
+  isStyledElement
 } from './render'
 
 import type {
@@ -67,7 +75,7 @@ const render = (
   props: DefaultProps,
   queue: Frame[],
   visitor: Visitor,
-  element?: UserElement
+  element: UserElement
 ) => {
   return shouldConstruct(type)
     ? mountClassComponent(type, props, queue, visitor, element)
@@ -126,27 +134,25 @@ export const visitElement = (
     case REACT_MEMO_TYPE: {
       const memoElement = ((element: any): MemoElement)
       const type = memoElement.type.type
-      const child = render(type, memoElement.props, queue, visitor)
+      const fauxElement = (createElement((type: any), memoElement.props): any)
+      const child = render(type, memoElement.props, queue, visitor, fauxElement)
       return getChildrenArray(child)
     }
 
     case REACT_FORWARD_REF_TYPE: {
       const refElement = ((element: any): ForwardRefElement)
-      if (
-        typeof refElement.type.styledComponentId === 'string' &&
-        typeof refElement.type.target !== 'function'
-      ) {
-        // This is an optimization that's specific to styled-components
-        // We can safely skip them if they're not wrapping a component
-        return getChildrenArray(refElement.props.children)
-      } else {
-        const {
-          props,
-          type: { render }
-        } = refElement
-        const child = mountFunctionComponent(render, props, queue, visitor)
-        return getChildrenArray(child)
+
+      // If we find a StyledComponent, we trigger a specific optimisation
+      // that allows quick rendering of them without computing styles
+      if (isStyledElement(refElement)) {
+        return mountStyledComponent(refElement)
       }
+
+      const { render: type, defaultProps } = refElement.type
+      const props = computeProps(refElement.props, defaultProps)
+      const fauxElement = (createElement((render: any), props): any)
+      const child = render(type, props, queue, visitor, fauxElement)
+      return getChildrenArray(child)
     }
 
     case REACT_ELEMENT_TYPE: {
@@ -171,34 +177,47 @@ export const visitElement = (
 
 const visitLoop = (
   traversalChildren: AbstractElement[][],
-  traversalIndex: number[],
   traversalMap: Array<void | ContextMap>,
   traversalStore: Array<void | ContextEntry>,
   queue: Frame[],
   visitor: Visitor
-) => {
+): boolean => {
   const start = Date.now()
 
-  while (traversalChildren.length > 0 && Date.now() - start <= YIELD_AFTER_MS) {
-    const currChildren = traversalChildren[traversalChildren.length - 1]
-    const currIndex = traversalIndex[traversalIndex.length - 1]++
-
-    if (currIndex < currChildren.length) {
-      const element = currChildren[currIndex]
+  while (traversalChildren.length > 0) {
+    const element = traversalChildren[traversalChildren.length - 1].shift()
+    if (element !== undefined) {
       const children = visitElement(element, queue, visitor)
-
       traversalChildren.push(children)
-      traversalIndex.push(0)
       traversalMap.push(flushPrevContextMap())
       traversalStore.push(flushPrevContextStore())
     } else {
       traversalChildren.pop()
-      traversalIndex.pop()
       restoreContextMap(traversalMap.pop())
       restoreContextStore(traversalStore.pop())
     }
+
+    if (Date.now() - start > YIELD_AFTER_MS) {
+      return true
+    }
   }
+
+  return false
 }
+
+const makeYieldFrame = (
+  traversalChildren: AbstractElement[][],
+  traversalMap: Array<void | ContextMap>,
+  traversalStore: Array<void | ContextEntry>
+): Frame => ({
+  contextMap: getCurrentContextMap(),
+  contextStore: getCurrentContextStore(),
+  thenable: Promise.resolve(),
+  kind: 'frame.yield',
+  children: traversalChildren,
+  map: traversalMap,
+  store: traversalStore
+})
 
 export const visitChildren = (
   init: AbstractElement[],
@@ -206,30 +225,21 @@ export const visitChildren = (
   visitor: Visitor
 ) => {
   const traversalChildren: AbstractElement[][] = [init]
-  const traversalIndex: number[] = [0]
   const traversalMap: Array<void | ContextMap> = [flushPrevContextMap()]
   const traversalStore: Array<void | ContextEntry> = [flushPrevContextStore()]
 
-  visitLoop(
+  const hasYielded = visitLoop(
     traversalChildren,
-    traversalIndex,
     traversalMap,
     traversalStore,
     queue,
     visitor
   )
 
-  if (traversalChildren.length > 0) {
-    queue.unshift({
-      contextMap: getCurrentContextMap(),
-      contextStore: getCurrentContextStore(),
-      thenable: Promise.resolve(),
-      kind: 'frame.yield',
-      children: traversalChildren,
-      index: traversalIndex,
-      map: traversalMap,
-      store: traversalStore
-    })
+  if (hasYielded) {
+    queue.unshift(
+      makeYieldFrame(traversalChildren, traversalMap, traversalStore)
+    )
   }
 }
 
@@ -242,5 +252,15 @@ export const resumeVisitChildren = (
   setCurrentContextMap(frame.contextMap)
   setCurrentContextStore(frame.contextStore)
 
-  visitLoop(frame.children, frame.index, frame.map, frame.store, queue, visitor)
+  const hasYielded = visitLoop(
+    frame.children,
+    frame.map,
+    frame.store,
+    queue,
+    visitor
+  )
+
+  if (hasYielded) {
+    queue.unshift(makeYieldFrame(frame.children, frame.map, frame.store))
+  }
 }

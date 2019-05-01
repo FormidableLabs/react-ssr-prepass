@@ -104,6 +104,7 @@ export type ForwardRefElement = {
   type: {
     render: ComponentType<DefaultProps> & ComponentStatics,
     $$typeof: typeof REACT_FORWARD_REF_TYPE,
+    defaultProps?: Object,
     // styled-components specific properties
     styledComponentId?: string,
     target?: ComponentType<mixed> | string
