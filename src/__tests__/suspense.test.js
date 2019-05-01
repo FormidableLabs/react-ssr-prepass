@@ -37,7 +37,7 @@ describe('renderPrepass', () => {
       })
     })
 
-    it('preserves the correct context values across yields', () => {
+    it('preserves the correct legacy context values across yields', () => {
       let called = false
       const Inner = (_, context) => {
         expect(context.test).toBe(123)
@@ -66,7 +66,38 @@ describe('renderPrepass', () => {
 
       const render$ = renderPrepass(<Outer />)
       expect(called).toBe(false)
+      return render$.then(() => {
+        expect(called).toBe(true)
+      })
+    })
 
+    it('preserves the correct context values across yields', () => {
+      const Context = createContext(null)
+
+      let called = false
+      const Inner = () => {
+        const value = useContext(Context)
+        expect(value).toBe(123)
+        called = true
+        return null
+      }
+
+      const Wait = () => {
+        const start = Date.now()
+        while (Date.now() - start < 21) {}
+        return <Inner />
+      }
+
+      const Outer = () => {
+        return (
+          <Context.Provider value={123}>
+            <Wait />
+          </Context.Provider>
+        )
+      }
+
+      const render$ = renderPrepass(<Outer />)
+      expect(called).toBe(false)
       return render$.then(() => {
         expect(called).toBe(true)
       })
