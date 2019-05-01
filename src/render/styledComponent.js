@@ -10,7 +10,6 @@ import type {
   DefaultProps,
   ForwardRefElement,
   Frame,
-  Visitor,
   ComponentStatics
 } from '../types'
 
@@ -33,15 +32,25 @@ type Attr = void | AttrsFn | { [propName: string]: ?AttrsFn }
 type StyledComponentStatics = {
   styledComponentId: string,
   attrs: Attr | Attr[],
-  target: ComponentType<DefaultProps> & ComponentStatics
+  target: ComponentType<DefaultProps> & ComponentStatics,
+  defaultProps?: Object
+}
+
+/** Determines a StyledComponent's theme taking defaults into account */
+const computeTheme = (props: Object, defaultProps: Object): Object => {
+  const defaultTheme = defaultProps ? defaultProps.theme : undefined
+  const isDefaultTheme = defaultTheme ? props.theme === defaultTheme : false
+
+  if (props.theme && !isDefaultTheme) {
+    return props.theme
+  } else {
+    const contextTheme = readContextValue(styledComponents.ThemeContext)
+    return contextTheme || defaultTheme
+  }
 }
 
 /** Computes a StyledComponent's props with attributes */
-const computeAttrsProps = (
-  input: Attr[],
-  props: DefaultProps,
-  theme: mixed
-): any => {
+const computeAttrsProps = (input: Attr[], props: any, theme: any): any => {
   const executionContext = { ...props, theme }
 
   const attrs = input.reduce((acc, attr) => {
@@ -63,40 +72,37 @@ const computeAttrsProps = (
     return acc
   }, {})
 
-  return Object.assign(attrs, props)
+  const newProps = (Object.assign(attrs, props): any)
+  newProps.className = props.className || ''
+  newProps.style = props.style
+    ? Object.assign({}, attrs.style, props.style)
+    : attrs.style
+  return newProps
 }
 
 /** Checks whether a ForwardRefElement is a StyledComponent element */
 export const isStyledElement = (element: ForwardRefElement): boolean %checks =>
+  styledComponents !== undefined &&
   typeof element.type.styledComponentId === 'string'
 
 /** This is an optimised faux mounting strategy for StyledComponents.
     It is only enabled when styled-components is installed and the component
     can safely be skipped */
-export const mount = (
-  element: ForwardRefElement,
-  queue: Frame[],
-  visitor: Visitor
-): Node => {
-  if (styledComponents === undefined) {
-    // styled-components is not installed or incompatible, so the component will have to be
-    // mounted normally
-    const { render } = element.type
-    return mountFunctionComponent(render, element.props, queue, visitor)
-  }
-
+export const mount = (element: ForwardRefElement): Node => {
   // Imitate styled-components' attrs props without computing styles
   const type = ((element.type: any): StyledComponentStatics)
-  const theme = readContextValue(styledComponents.ThemeContext) || {}
   const attrs: Attr[] = Array.isArray(type.attrs) ? type.attrs : [type.attrs]
-  const computedProps = computeProps(element.props, (type: any).defaultProps)
+  const computedProps = computeProps(element.props, type.defaultProps)
+  const theme = computeTheme(element.props, type)
   const props = computeAttrsProps(attrs, computedProps, theme)
   const as = props.as || type.target
+  const children = computedProps.children || null
 
-  if (typeof as !== 'function') {
-    // StyledComponents rendering DOM elements can safely be skipped like normal DOM elements
-    return element.props.children || null
+  // StyledComponents rendering DOM elements can safely be skipped like normal DOM elements
+  if (typeof as === 'string') {
+    return children
   } else {
-    return createElement((as: any), props)
+    delete props.as
+    return createElement((as: any), props, children)
   }
 }

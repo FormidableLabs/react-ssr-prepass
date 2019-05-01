@@ -1,7 +1,13 @@
 // @flow
 
 import type { Node, ComponentType } from 'react'
-import { typeOf, shouldConstruct, getChildrenArray } from './element'
+
+import {
+  typeOf,
+  shouldConstruct,
+  getChildrenArray,
+  computeProps
+} from './element'
 
 import {
   mountFunctionComponent,
@@ -63,9 +69,6 @@ import {
 // Time in ms after which the otherwise synchronous visitor yields so that
 // the event loop is not interrupted for too long
 const YIELD_AFTER_MS = process.env.NODE_ENV !== 'production' ? 20 : 5
-
-// A no-op function for styled-components' ComponentStyle class
-const NOOP_GEN_CLASSNAME = () => ''
 
 const render = (
   type: ComponentType<DefaultProps> & ComponentStatics,
@@ -142,10 +145,10 @@ export const visitElement = (
       // that allows quick rendering of them without computing styles
       let child = null
       if (isStyledElement(refElement)) {
-        child = mountStyledComponent(refElement, queue, visitor)
+        child = mountStyledComponent(refElement)
       } else {
-        const { render } = refElement.type
-        const props = refElement.props
+        const { render, defaultProps } = refElement.type
+        const props = computeProps(refElement.props, defaultProps)
         child = mountFunctionComponent(render, props, queue, visitor)
       }
 
@@ -182,7 +185,7 @@ const visitLoop = (
 ) => {
   const start = Date.now()
 
-  while (traversalChildren.length > 0 && Date.now() - start <= YIELD_AFTER_MS) {
+  while (traversalChildren.length > 0) {
     const currChildren = traversalChildren[traversalChildren.length - 1]
     const currIndex = traversalIndex[traversalIndex.length - 1]++
 
@@ -205,7 +208,15 @@ const visitLoop = (
       restoreContextMap(traversalMap.pop())
       restoreContextStore(traversalStore.pop())
     }
+
+    /*
+    if (Date.now() - start > YIELD_AFTER_MS) {
+      return true
+    }
+    */
   }
+
+  return false
 }
 
 export const visitChildren = (
@@ -217,8 +228,7 @@ export const visitChildren = (
   const traversalIndex: number[] = [0]
   const traversalMap: Array<void | ContextMap> = [flushPrevContextMap()]
   const traversalStore: Array<void | ContextEntry> = [flushPrevContextStore()]
-
-  visitLoop(
+  const hasYielded = visitLoop(
     traversalChildren,
     traversalIndex,
     traversalMap,
@@ -227,7 +237,7 @@ export const visitChildren = (
     visitor
   )
 
-  if (traversalChildren.length > 0) {
+  if (hasYielded) {
     queue.unshift({
       contextMap: getCurrentContextMap(),
       contextStore: getCurrentContextStore(),
