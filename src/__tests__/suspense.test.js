@@ -37,6 +37,41 @@ describe('renderPrepass', () => {
       })
     })
 
+    it('preserves the correct context values across yields', () => {
+      let called = false
+      const Inner = (_, context) => {
+        expect(context.test).toBe(123)
+        called = true
+        return null
+      }
+
+      const Wait = () => {
+        const start = Date.now()
+        while (Date.now() - start < 21) {}
+        return <Inner />
+      }
+
+      class Outer extends Component {
+        getChildContext() {
+          return { test: 123 }
+        }
+
+        render() {
+          return <Wait />
+        }
+      }
+
+      Inner.contextTypes = { test: null }
+      Outer.childContextTypes = { test: null }
+
+      const render$ = renderPrepass(<Outer />)
+      expect(called).toBe(false)
+
+      return render$.then(() => {
+        expect(called).toBe(true)
+      })
+    })
+
     it('does not yields when work is below the threshold', () => {
       const Inner = jest.fn(() => null)
       const Outer = () => <Inner />

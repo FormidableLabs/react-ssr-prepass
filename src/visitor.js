@@ -190,10 +190,15 @@ const visitLoop = (
       const element = currChildren[currIndex]
       const children = visitElement(element, queue, visitor)
 
-      traversalChildren.push(children)
-      traversalIndex.push(0)
-      traversalMap.push(flushPrevContextMap())
-      traversalStore.push(flushPrevContextStore())
+      if (children.length > 0) {
+        traversalChildren.push(children)
+        traversalIndex.push(0)
+        traversalMap.push(flushPrevContextMap())
+        traversalStore.push(flushPrevContextStore())
+      } else {
+        restoreContextMap(flushPrevContextMap())
+        restoreContextStore(flushPrevContextStore())
+      }
     } else {
       traversalChildren.pop()
       traversalIndex.pop()
