@@ -14,14 +14,10 @@ import {
 import {
   setCurrentContextStore,
   setCurrentContextMap,
-  Dispatcher
+  hasReactInternals,
+  setupDispatcher,
+  restoreDispatcher
 } from './internals'
-
-const {
-  ReactCurrentDispatcher
-} = (React: any).__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED
-
-let prevDispatcher = ReactCurrentDispatcher.current
 
 /** visitChildren walks all elements (depth-first) and while it walks the
     element tree some components will suspend and put a `Frame` onto
@@ -38,20 +34,17 @@ const updateWithFrame = (
 
     return new Promise(resolve => {
       setImmediate(() => {
-        prevDispatcher = ReactCurrentDispatcher.current
-        ReactCurrentDispatcher.current = Dispatcher
+        setupDispatcher()
         resumeVisitChildren(yieldFrame, queue, visitor)
-        ReactCurrentDispatcher.current = prevDispatcher
+        restoreDispatcher()
         resolve()
       })
     })
   }
 
   return frame.thenable.then(() => {
-    prevDispatcher = ReactCurrentDispatcher.current
-    ReactCurrentDispatcher.current = Dispatcher
-
     let children = []
+    setupDispatcher()
 
     // Update the component after we've suspended to rerender it,
     // at which point we'll actually get its children
@@ -66,7 +59,7 @@ const updateWithFrame = (
     // Now continue walking the previously suspended component's
     // children (which might also suspend)
     visitChildren(getChildrenArray(children), queue, visitor)
-    ReactCurrentDispatcher.current = prevDispatcher
+    restoreDispatcher()
   })
 }
 
@@ -83,6 +76,12 @@ const flushFrames = (queue: Frame[], visitor: Visitor): Promise<void> => {
 const defaultVisitor = () => undefined
 
 const renderPrepass = (element: Node, visitor?: Visitor): Promise<void> => {
+  // If React has been replaced with a compat package that is
+  // unsupported by react-ssr-prepass, it bails early on
+  if (!hasReactInternals) {
+    return Promise.resolve()
+  }
+
   const queue: Frame[] = []
   const fn = visitor !== undefined ? visitor : defaultVisitor
 
@@ -93,17 +92,12 @@ const renderPrepass = (element: Node, visitor?: Visitor): Promise<void> => {
   setCurrentContextStore(new Map())
 
   try {
-    // The "Dispatcher" is what handles hook calls and
-    // a React internal that needs to be set to our
-    // dispatcher and reset after we're done
-    prevDispatcher = ReactCurrentDispatcher.current
-    ReactCurrentDispatcher.current = Dispatcher
-
+    setupDispatcher()
     visitChildren(getChildrenArray(element), queue, fn)
   } catch (error) {
     return Promise.reject(error)
   } finally {
-    ReactCurrentDispatcher.current = prevDispatcher
+    restoreDispatcher()
   }
 
   return flushFrames(queue, fn)

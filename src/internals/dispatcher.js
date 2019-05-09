@@ -26,7 +26,8 @@ export const setCurrentIdentity = (id: Identity | null) => {
 export const getCurrentIdentity = (): Identity => {
   if (currentIdentity === null) {
     throw new Error(
-      '[react-ssr-prepass] Hooks can only be called inside the body of a function component. ' +
+      '[react-ssr-prepass] Hooks can only be called ' +
+        'inside the body of a function component. ' +
         '(https://fb.me/react-invalid-hook-call)'
     )
   }
@@ -305,6 +306,8 @@ function useCallback<T>(callback: T, deps: Array<mixed> | void | null): T {
 
 function noop(): void {}
 
+// The "Dispatcher" is what handles hook calls and needs to be set up before
+// visiting children (see ./react.js)
 export const Dispatcher = {
   readContext,
   useContext,
