@@ -60,6 +60,9 @@
     "react": "^16.8.0",
     "react-is": "^16.8.0"
   },
+  "dependencies": {
+    "object-is": "^1.0.1"
+  },
   "devDependencies": {
     "@babel/core": "^7.3.4",
     "@babel/preset-env": "^7.3.4",
@@ -77,8 +80,5 @@
     "react-dom": "^16.8.4",
     "react-is": "^16.8.4",
     "styled-components": "^4.2.0"
-  },
-  "dependencies": {
-    "object-is": "^1.0.1"
   }
 }
