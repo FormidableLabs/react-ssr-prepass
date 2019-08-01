@@ -215,7 +215,7 @@ describe('visitElement', () => {
   })
 
   it('walks over memo components', () => {
-    const Test = React.memo(() => <Noop />)
+    const Test = React.memo(Noop)
     const children = visitElement(<Test />, [], () => {})
     expect(children.length).toBe(1)
     expect(children[0].type).toBe(Noop)
