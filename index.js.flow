@@ -6,6 +6,6 @@ export type Visitor = (
 ) => void | Promise<any>
 
 declare module.exports: (
-  node: React$Node
+  node: React$Node,
   visitor?: Visitor
 ) => Promise<void>;
