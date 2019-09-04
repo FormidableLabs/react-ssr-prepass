@@ -3,8 +3,7 @@ import React, {
   Fragment,
   Suspense,
   StrictMode,
-  unstable_Profiler as Profiler,
-  unstable_ConcurrentMode as AsyncMode,
+  Profiler,
   createContext,
   useReducer,
   useContext,
@@ -82,16 +81,10 @@ describe('visitElement', () => {
         <Noop />
       </Suspense>
     )
-
     assert(
       <StrictMode>
         <Noop />
       </StrictMode>
-    )
-    assert(
-      <AsyncMode>
-        <Noop />
-      </AsyncMode>
     )
     assert(
       <Profiler>
