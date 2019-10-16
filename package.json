@@ -12,8 +12,10 @@
   "files": [
     "index.js",
     "index.js.flow",
-    "dist"
+    "dist",
+    "index.d.ts"
   ],
+  "types": "index.d.ts",
   "scripts": {
     "prepublishOnly": "run-s build",
     "build": "rollup -c rollup.config.js",
