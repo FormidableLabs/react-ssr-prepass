@@ -1,8 +1,8 @@
 # react-ssr-prepass
 
 <p>
-  <a href="https://travis-ci.org/FormidableLabs/react-ssr-prepass">
-    <img alt="Build Status" src="https://travis-ci.org/FormidableLabs/react-ssr-prepass.svg?branch=master" />
+  <a href="https://travis-ci.com/FormidableLabs/react-ssr-prepass">
+    <img alt="Build Status" src="https://travis-ci.com/FormidableLabs/react-ssr-prepass.svg?branch=master" />
   </a>
   <a href="https://codecov.io/gh/FormidableLabs/react-ssr-prepass">
     <img alt="Test Coverage" src="https://codecov.io/gh/FormidableLabs/react-ssr-prepass/branch/master/graph/badge.svg" />
