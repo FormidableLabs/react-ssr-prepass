@@ -1,7 +1,15 @@
 // @flow
 
 import React, { type Node, type Element } from 'react'
-import type { Visitor, YieldFrame, Frame, AbstractElement } from './types'
+
+import type {
+  VisitOptions,
+  Visitor,
+  YieldFrame,
+  Frame,
+  AbstractElement
+} from './types'
+
 import { visitChildren, resumeVisitChildren } from './visitor'
 import { getChildrenArray } from './element'
 
@@ -22,6 +30,10 @@ const {
 } = (React: any).__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED
 
 let prevDispatcher = ReactCurrentDispatcher.current
+
+const defaultVisitOptions: VisitOptions = {
+  visitAllComponentTypes: false
+}
 
 /** visitChildren walks all elements (depth-first) and while it walks the
     element tree some components will suspend and put a `Frame` onto
@@ -82,9 +94,14 @@ const flushFrames = (queue: Frame[], visitor: Visitor): Promise<void> => {
 
 const defaultVisitor = () => undefined
 
-const renderPrepass = (element: Node, visitor?: Visitor): Promise<void> => {
+const renderPrepass = (
+  element: Node,
+  visitor?: Visitor,
+  visitOptions?: VisitOptions
+): Promise<void> => {
   const queue: Frame[] = []
   const fn = visitor !== undefined ? visitor : defaultVisitor
+  const opts = { ...defaultVisitOptions, ...visitOptions }
 
   // Context state is kept globally and is modified in-place.
   // Before we start walking the element tree we need to reset
@@ -99,7 +116,7 @@ const renderPrepass = (element: Node, visitor?: Visitor): Promise<void> => {
     prevDispatcher = ReactCurrentDispatcher.current
     ReactCurrentDispatcher.current = Dispatcher
 
-    visitChildren(getChildrenArray(element), queue, fn)
+    visitChildren(getChildrenArray(element), queue, fn, opts)
   } catch (error) {
     return Promise.reject(error)
   } finally {

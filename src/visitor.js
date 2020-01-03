@@ -18,6 +18,7 @@ import {
 } from './render'
 
 import type {
+  VisitOptions,
   Visitor,
   YieldFrame,
   Frame,
@@ -85,8 +86,21 @@ const render = (
 export const visitElement = (
   element: AbstractElement,
   queue: Frame[],
-  visitor: Visitor
+  visitor: Visitor,
+  visitOptions?: VisitOptions
 ): AbstractElement[] => {
+  // By default, the supplied `visitor` function is only executed on non-string
+  // React elements. Here we call the visitor on all other React component types
+  // if explicitly requested.
+  if (
+    visitOptions !== undefined &&
+    visitOptions.visitAllComponentTypes &&
+    (typeOf(element) !== REACT_ELEMENT_TYPE || typeof element.type === 'string')
+  ) {
+    const el = ((element: any): UserElement | DOMElement)
+    visitor(el)
+  }
+
   switch (typeOf(element)) {
     case REACT_SUSPENSE_TYPE:
     case REACT_STRICT_MODE_TYPE:
@@ -179,14 +193,15 @@ const visitLoop = (
   traversalMap: Array<void | ContextMap>,
   traversalStore: Array<void | ContextEntry>,
   queue: Frame[],
-  visitor: Visitor
+  visitor: Visitor,
+  visitOptions?: VisitOptions
 ): boolean => {
   const start = Date.now()
 
   while (traversalChildren.length > 0) {
     const element = traversalChildren[traversalChildren.length - 1].shift()
     if (element !== undefined) {
-      const children = visitElement(element, queue, visitor)
+      const children = visitElement(element, queue, visitor, visitOptions)
       traversalChildren.push(children)
       traversalMap.push(flushPrevContextMap())
       traversalStore.push(flushPrevContextStore())
@@ -221,7 +236,8 @@ const makeYieldFrame = (
 export const visitChildren = (
   init: AbstractElement[],
   queue: Frame[],
-  visitor: Visitor
+  visitor: Visitor,
+  visitOptions?: VisitOptions
 ) => {
   const traversalChildren: AbstractElement[][] = [init]
   const traversalMap: Array<void | ContextMap> = [flushPrevContextMap()]
@@ -232,7 +248,8 @@ export const visitChildren = (
     traversalMap,
     traversalStore,
     queue,
-    visitor
+    visitor,
+    visitOptions
   )
 
   if (hasYielded) {

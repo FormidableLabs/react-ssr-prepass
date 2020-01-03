@@ -63,10 +63,30 @@ describe('visitElement', () => {
         <Noop />
       </Fragment>
     )
-    const children = visitElement(element, [], () => {})
+    const visitor = jest.fn()
+    const children = visitElement(element, [], visitor)
     expect(children.length).toBe(2)
     expect(children[0].type).toBe(Noop)
     expect(children[1].type).toBe(Noop)
+    expect(visitor).not.toHaveBeenCalled()
+  })
+
+  it('visits Fragments if configured', () => {
+    const element = (
+      <Fragment>
+        <Noop />
+        {null}
+        <Noop />
+      </Fragment>
+    )
+    const visitor = jest.fn()
+
+    visitElement(element, [], visitor, {
+      visitAllComponentTypes: true
+    })
+
+    expect(visitor).toHaveBeenCalledTimes(1)
+    expect(visitor).toHaveBeenCalledWith(element)
   })
 
   it('walks misc. mode-like components', () => {
@@ -101,10 +121,30 @@ describe('visitElement', () => {
         <Noop />
       </div>
     )
-    const children = visitElement(element, [], () => {})
+    const visitor = jest.fn()
+    const children = visitElement(element, [], visitor)
     expect(children.length).toBe(2)
     expect(children[0].type).toBe(Noop)
     expect(children[1].type).toBe(Noop)
+    expect(visitor).not.toHaveBeenCalled()
+  })
+
+  it('visits DOM elements if configured', () => {
+    const element = (
+      <div>
+        <Noop />
+        {null}
+        <Noop />
+      </div>
+    )
+    const visitor = jest.fn()
+
+    visitElement(element, [], visitor, {
+      visitAllComponentTypes: true
+    })
+
+    expect(visitor).toHaveBeenCalledTimes(1)
+    expect(visitor.mock.calls[0][0].type).toBe('div')
   })
 
   it('walks StyledComponent DOM elements', () => {
@@ -147,6 +187,7 @@ describe('visitElement', () => {
   it('walks Providers and Consumers', () => {
     const Context = createContext('default')
     const leaf = jest.fn().mockReturnValue(null)
+    const visitor = jest.fn()
 
     const makeChild = value => (
       <Context.Provider value={value}>
@@ -155,20 +196,52 @@ describe('visitElement', () => {
     )
 
     for (let i = 0, child = makeChild('testA'); i <= 3 && child; i++) {
-      child = visitElement(child, [], () => {})[0]
+      child = visitElement(child, [], visitor)[0]
     }
 
     expect(readContextValue(Context)).toBe('testA')
     expect(flushPrevContextStore()).toEqual([Context, undefined])
     expect(leaf).toHaveBeenCalledWith('testA')
+    expect(visitor).not.toHaveBeenCalled()
 
     for (let i = 0, child = makeChild('testB'); i <= 3 && child; i++) {
-      child = visitElement(child, [], () => {})[0]
+      child = visitElement(child, [], visitor)[0]
     }
 
     expect(readContextValue(Context)).toBe('testB')
     expect(flushPrevContextStore()).toEqual([Context, 'testA'])
     expect(leaf).toHaveBeenCalledWith('testB')
+    expect(visitor).not.toHaveBeenCalled()
+  })
+
+  it('visits Providers and Consumers if configured', () => {
+    const Context = createContext('default')
+    const leaf = jest.fn().mockReturnValue(null)
+    const visitor = jest.fn()
+
+    const element = (
+      <Context.Provider value="default">
+        <Context.Consumer>{leaf}</Context.Consumer>
+      </Context.Provider>
+    )
+
+    const [consumerElement] = visitElement(element, [], visitor, {
+      visitAllComponentTypes: true
+    })
+    expect(visitor).toHaveBeenCalledTimes(1)
+    expect(visitor).toHaveBeenCalledWith(element)
+
+    visitor.mockClear()
+
+    // By default, we shouldn't visit Consumers
+    visitElement(consumerElement, [], visitor)
+    expect(visitor).not.toHaveBeenCalled()
+
+    visitElement(consumerElement, [], visitor, {
+      visitAllComponentTypes: true
+    })
+    expect(visitor).toHaveBeenCalledTimes(1)
+    expect(visitor).toHaveBeenCalledWith(consumerElement)
   })
 
   it('skips over invalid Consumer components', () => {
@@ -202,22 +275,66 @@ describe('visitElement', () => {
 
   it('walks over forwardRef components', () => {
     const Test = React.forwardRef(() => <Noop />)
-    const children = visitElement(<Test />, [], () => {})
+    const visitor = jest.fn()
+    const children = visitElement(<Test />, [], visitor)
     expect(children.length).toBe(1)
     expect(children[0].type).toBe(Noop)
+    expect(visitor).toHaveBeenCalledTimes(1)
+  })
+
+  it('visits forwardRef components if configured', () => {
+    const Test = React.forwardRef(() => <Noop />)
+    const element = <Test />
+    const visitor = jest.fn()
+
+    visitElement(element, [], visitor, {
+      visitAllComponentTypes: true
+    })
+
+    expect(visitor).toHaveBeenCalledTimes(2)
+    expect(visitor.mock.calls[0][0]).toBe(element)
   })
 
   it('walks over memo components', () => {
     const Test = React.memo(Noop)
-    const children = visitElement(<Test />, [], () => {})
+    const visitor = jest.fn()
+    const children = visitElement(<Test />, [], visitor)
     expect(children.length).toBe(1)
     expect(children[0].type).toBe(Noop)
+    expect(visitor).not.toHaveBeenCalled()
+  })
+
+  it('visits memo components if configured', () => {
+    const Test = React.memo(Noop)
+    const element = <Test />
+    const visitor = jest.fn()
+
+    visitElement(element, [], visitor, {
+      visitAllComponentTypes: true
+    })
+
+    expect(visitor).toHaveBeenCalledTimes(1)
+    expect(visitor).toHaveBeenCalledWith(element)
   })
 
   it('returns nothing for portal components', () => {
     const portal = createPortal(<Noop />, document.createElement('div'))
-    const children = visitElement(portal, [], () => {})
+    const visitor = jest.fn()
+    const children = visitElement(portal, [], visitor)
     expect(children.length).toBe(0)
+    expect(visitor).not.toHaveBeenCalled()
+  })
+
+  it('visits portal components if configured', () => {
+    const element = createPortal(<Noop />, document.createElement('div'))
+    const visitor = jest.fn()
+
+    visitElement(element, [], visitor, {
+      visitAllComponentTypes: true
+    })
+
+    expect(visitor).toHaveBeenCalledTimes(1)
+    expect(visitor).toHaveBeenCalledWith(element)
   })
 
   it('renders class components with getDerivedStateFromProps', () => {

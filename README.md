@@ -113,6 +113,12 @@ data rehydration. In most cases it's fine to collect data from your cache
 or store after running `ssrPrepass`, turn it into JSON, and send it
 down in your HTML result.
 
+An optional third "options" argument can be supplied with the following properties:
+
+| Property                 | Type      | Default value | Description                                                                                                                                                                                                                                      |
+| ------------------------ | --------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `visitAllComponentTypes` | `Boolean` | `false`       | When `true` the supplied visitor function will be called on elements of all types, not just class or function elements. Note that `react-ssr-prepass` _will not_ suspend if you return a promise when receiving a non-class or function element. |
+
 ## Examples & Recipes
 
 ### Usage with `react-apollo`
