@@ -21,7 +21,25 @@ const {
   ReactCurrentDispatcher
 } = (React: any).__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED
 
-let prevDispatcher = ReactCurrentDispatcher.current
+const ReactDispatcher = ReactCurrentDispatcher.current
+
+/**
+ * Safely replace and restore "Dispatcher"
+ *
+ * `cb` should be synchronous.
+ *
+ * The "Dispatcher" is what handles hook calls and
+ * React internal that needs to be set to our
+ * dispatcher and reset after we're done
+ */
+const withDispatcher = <T>(cb: () => T): T => {
+  ReactCurrentDispatcher.current = Dispatcher
+  try {
+    return cb()
+  } finally {
+    ReactCurrentDispatcher.current = ReactDispatcher
+  }
+}
 
 /** visitChildren walks all elements (depth-first) and while it walks the
     element tree some components will suspend and put a `Frame` onto
@@ -38,25 +56,20 @@ const updateWithFrame = (
 
     return new Promise((resolve, reject) => {
       setImmediate(() => {
-        prevDispatcher = ReactCurrentDispatcher.current
-        ReactCurrentDispatcher.current = Dispatcher
         try {
-          resumeVisitChildren(yieldFrame, queue, visitor)
+          withDispatcher(() => {
+            resumeVisitChildren(yieldFrame, queue, visitor)
+          })
           resolve()
         } catch (error) {
           reject(error)
-        } finally {
-          ReactCurrentDispatcher.current = prevDispatcher
         }
       })
     })
   }
 
   return frame.thenable.then(() => {
-    prevDispatcher = ReactCurrentDispatcher.current
-    ReactCurrentDispatcher.current = Dispatcher
-
-    try {
+    withDispatcher(() => {
       let children = []
 
       // Update the component after we've suspended to rerender it,
@@ -72,9 +85,7 @@ const updateWithFrame = (
       // Now continue walking the previously suspended component's
       // children (which might also suspend)
       visitChildren(getChildrenArray(children), queue, visitor)
-    } finally {
-      ReactCurrentDispatcher.current = prevDispatcher
-    }
+    })
   })
 }
 
@@ -101,17 +112,11 @@ const renderPrepass = (element: Node, visitor?: Visitor): Promise<void> => {
   setCurrentContextStore(new Map())
 
   try {
-    // The "Dispatcher" is what handles hook calls and
-    // a React internal that needs to be set to our
-    // dispatcher and reset after we're done
-    prevDispatcher = ReactCurrentDispatcher.current
-    ReactCurrentDispatcher.current = Dispatcher
-
-    visitChildren(getChildrenArray(element), queue, fn)
+    withDispatcher(() => {
+      visitChildren(getChildrenArray(element), queue, fn)
+    })
   } catch (error) {
     return Promise.reject(error)
-  } finally {
-    ReactCurrentDispatcher.current = prevDispatcher
   }
 
   return flushFrames(queue, fn)
