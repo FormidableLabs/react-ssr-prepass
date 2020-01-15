@@ -37,6 +37,27 @@ describe('renderPrepass', () => {
       })
     })
 
+    it('rejects promise after getting of exception inside', () => {
+      const exception = new TypeError('Something went wrong')
+
+      const Inner = jest.fn(() => {
+        throw exception
+      })
+
+      const Outer = () => {
+        const start = Date.now()
+        while (Date.now() - start < 40) {}
+        return <Inner />
+      }
+
+      const render$ = renderPrepass(<Outer />)
+
+      return render$.catch(error => {
+        expect(Inner).toHaveBeenCalledTimes(1)
+        expect(error).toBe(exception)
+      })
+    })
+
     it('preserves the correct legacy context values across yields', () => {
       let called = false
       const Inner = (_, context) => {
