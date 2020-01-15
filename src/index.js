@@ -38,14 +38,15 @@ const updateWithFrame = (
 
     return new Promise((resolve, reject) => {
       setImmediate(() => {
+        prevDispatcher = ReactCurrentDispatcher.current
+        ReactCurrentDispatcher.current = Dispatcher
         try {
-          prevDispatcher = ReactCurrentDispatcher.current
-          ReactCurrentDispatcher.current = Dispatcher
           resumeVisitChildren(yieldFrame, queue, visitor)
-          ReactCurrentDispatcher.current = prevDispatcher
           resolve()
         } catch (error) {
           reject(error)
+        } finally {
+          ReactCurrentDispatcher.current = prevDispatcher
         }
       })
     })
@@ -55,22 +56,25 @@ const updateWithFrame = (
     prevDispatcher = ReactCurrentDispatcher.current
     ReactCurrentDispatcher.current = Dispatcher
 
-    let children = []
+    try {
+      let children = []
 
-    // Update the component after we've suspended to rerender it,
-    // at which point we'll actually get its children
-    if (frame.kind === 'frame.class') {
-      children = updateClassComponent(queue, frame)
-    } else if (frame.kind === 'frame.hooks') {
-      children = updateFunctionComponent(queue, frame)
-    } else if (frame.kind === 'frame.lazy') {
-      children = updateLazyComponent(queue, frame)
+      // Update the component after we've suspended to rerender it,
+      // at which point we'll actually get its children
+      if (frame.kind === 'frame.class') {
+        children = updateClassComponent(queue, frame)
+      } else if (frame.kind === 'frame.hooks') {
+        children = updateFunctionComponent(queue, frame)
+      } else if (frame.kind === 'frame.lazy') {
+        children = updateLazyComponent(queue, frame)
+      }
+
+      // Now continue walking the previously suspended component's
+      // children (which might also suspend)
+      visitChildren(getChildrenArray(children), queue, visitor)
+    } finally {
+      ReactCurrentDispatcher.current = prevDispatcher
     }
-
-    // Now continue walking the previously suspended component's
-    // children (which might also suspend)
-    visitChildren(getChildrenArray(children), queue, visitor)
-    ReactCurrentDispatcher.current = prevDispatcher
   })
 }
 
