@@ -36,13 +36,17 @@ const updateWithFrame = (
   if (frame.kind === 'frame.yield') {
     const yieldFrame: YieldFrame = frame
 
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       setImmediate(() => {
-        prevDispatcher = ReactCurrentDispatcher.current
-        ReactCurrentDispatcher.current = Dispatcher
-        resumeVisitChildren(yieldFrame, queue, visitor)
-        ReactCurrentDispatcher.current = prevDispatcher
-        resolve()
+        try {
+          prevDispatcher = ReactCurrentDispatcher.current
+          ReactCurrentDispatcher.current = Dispatcher
+          resumeVisitChildren(yieldFrame, queue, visitor)
+          ReactCurrentDispatcher.current = prevDispatcher
+          resolve()
+        } catch (error) {
+          reject(error)
+        }
       })
     })
   }
