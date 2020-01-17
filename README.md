@@ -137,24 +137,6 @@ already, `ssrPrepass` will suspend on `<Query>` components.
 
 [More information can be found in Apollo's own docs](https://www.apollographql.com/docs/react/features/server-side-rendering.html#getDataFromTree)
 
-## Optional Dependencies
-
-### Special case for `styled-components`
-
-`react-ssr-prepass` has an optional dependency on `styled-components@>=4.0.0`.
-This optimization skips any styling logic and imitates the attributes and props
-logic of `styled-components` otherwise.
-
-It exists because styled-components may populate the `ServerStyleSheet` as
-part of a `react-ssr-prepass` run, since it behaves like a normal React renderer.
-This is dangerous if the element tree that is passed to `react-ssr-prepass`
-is not wrapped in a `ServerStyleSheet` at all, since it will start accumulating
-styles and cause a memory leak. In `v4` it can also cause these styles to
-become _global_ and be sent to every server-rendered page.
-
-If you're not using styled-components however and are bundling your server-side
-code you need to stub styled-components with an empty package or just install it.
-
 ## Prior Art
 
 This library is (luckily) not a reimplementation from scratch of
