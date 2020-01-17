@@ -14,8 +14,7 @@ import {
 import {
   setCurrentContextStore,
   setCurrentContextMap,
-  Dispatcher,
-  setCurrentIdentity
+  Dispatcher
 } from './internals'
 
 const {
