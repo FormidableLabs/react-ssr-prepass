@@ -136,7 +136,7 @@ export const visitElement = (
 
     case REACT_MEMO_TYPE: {
       const memoElement = ((element: any): MemoElement)
-      const type = memoElement.type.type
+      const { type } = memoElement.type
       const child = createElement((type: any), memoElement.props)
       return getChildrenArray(child)
     }
@@ -152,8 +152,7 @@ export const visitElement = (
 
       const { render: type, defaultProps } = refElement.type
       const props = computeProps(refElement.props, defaultProps)
-      const fauxElement = (createElement((render: any), props): any)
-      const child = render(type, props, queue, visitor, fauxElement)
+      const child = createElement((type: any), props)
       return getChildrenArray(child)
     }
 
