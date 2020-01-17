@@ -306,6 +306,17 @@ function useCallback<T>(callback: T, deps: Array<mixed> | void | null): T {
 
 function noop(): void {}
 
+function useTransition(): [(callback: () => void) => void, boolean] {
+  const startTransition = callback => {
+    callback()
+  }
+  return [startTransition, false]
+}
+
+function useDeferredValue<T>(input: T): T {
+  return input
+}
+
 export const Dispatcher = {
   readContext,
   useContext,
@@ -314,6 +325,8 @@ export const Dispatcher = {
   useRef,
   useState,
   useCallback,
+  useTransition,
+  useDeferredValue,
   // ignore useLayout effect completely as usage of it will be caught
   // in a subsequent render pass
   useLayoutEffect: noop,
