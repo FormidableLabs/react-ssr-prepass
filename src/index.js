@@ -2,14 +2,8 @@
 
 import React, { type Node, type Element } from 'react'
 import type { Visitor, YieldFrame, Frame, AbstractElement } from './types'
-import { visitChildren, resumeVisitChildren } from './visitor'
+import { visitChildren, resumeVisitChildren, update } from './visitor'
 import { getChildrenArray } from './element'
-
-import {
-  updateFunctionComponent,
-  updateClassComponent,
-  updateLazyComponent
-} from './render'
 
 import {
   setCurrentContextStore,
@@ -21,7 +15,31 @@ const {
   ReactCurrentDispatcher
 } = (React: any).__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED
 
-let prevDispatcher = ReactCurrentDispatcher.current
+/** wrapWithDispatcher accepts a function and wraps it
+  in one that sets up our ReactCurrentDispatcher and
+  resets it afterwards */
+function wrapWithDispatcher<T: Function>(exec: T): T {
+  // $FlowFixMe
+  return (...args) => {
+    let prevDispatcher = ReactCurrentDispatcher.current
+
+    try {
+      // The "Dispatcher" is what handles hook calls and
+      // a React internal that needs to be set to our dispatcher
+      ReactCurrentDispatcher.current = Dispatcher
+      exec(...args)
+    } finally {
+      // We're resetting the dispatcher after we're done
+      ReactCurrentDispatcher.current = prevDispatcher
+    }
+  }
+}
+
+const resumeVisitChildrenWithDispatcher = wrapWithDispatcher(
+  resumeVisitChildren
+)
+const visitChildrenWithDispatcher = wrapWithDispatcher(visitChildren)
+const updateWithDispatcher = wrapWithDispatcher(update)
 
 /** visitChildren walks all elements (depth-first) and while it walks the
     element tree some components will suspend and put a `Frame` onto
@@ -34,51 +52,30 @@ const updateWithFrame = (
   visitor: Visitor
 ): Promise<void> => {
   if (frame.kind === 'frame.yield') {
-    const yieldFrame: YieldFrame = frame
-
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
       setImmediate(() => {
-        prevDispatcher = ReactCurrentDispatcher.current
-        ReactCurrentDispatcher.current = Dispatcher
-        resumeVisitChildren(yieldFrame, queue, visitor)
-        ReactCurrentDispatcher.current = prevDispatcher
+        resumeVisitChildrenWithDispatcher(frame, queue, visitor)
         resolve()
       })
     })
   }
 
   return frame.thenable.then(() => {
-    prevDispatcher = ReactCurrentDispatcher.current
-    ReactCurrentDispatcher.current = Dispatcher
-
-    let children = []
-
     // Update the component after we've suspended to rerender it,
     // at which point we'll actually get its children
-    if (frame.kind === 'frame.class') {
-      children = updateClassComponent(queue, frame)
-    } else if (frame.kind === 'frame.hooks') {
-      children = updateFunctionComponent(queue, frame)
-    } else if (frame.kind === 'frame.lazy') {
-      children = updateLazyComponent(queue, frame)
-    }
-
+    const children = updateWithDispatcher(frame, queue)
     // Now continue walking the previously suspended component's
     // children (which might also suspend)
-    visitChildren(getChildrenArray(children), queue, visitor)
-    ReactCurrentDispatcher.current = prevDispatcher
+    visitChildrenWithDispatcher(getChildrenArray(children), queue, visitor)
   })
 }
 
-const flushFrames = (queue: Frame[], visitor: Visitor): Promise<void> => {
-  if (queue.length === 0) {
-    return Promise.resolve()
-  }
-
-  return updateWithFrame(queue.shift(), queue, visitor).then(() =>
-    flushFrames(queue, visitor)
-  )
-}
+const flushFrames = (queue: Frame[], visitor: Visitor): Promise<void> =>
+  queue.length === 0
+    ? Promise.resolve()
+    : updateWithFrame(queue.shift(), queue, visitor).then(() =>
+        flushFrames(queue, visitor)
+      )
 
 const defaultVisitor = () => undefined
 
@@ -93,17 +90,9 @@ const renderPrepass = (element: Node, visitor?: Visitor): Promise<void> => {
   setCurrentContextStore(new Map())
 
   try {
-    // The "Dispatcher" is what handles hook calls and
-    // a React internal that needs to be set to our
-    // dispatcher and reset after we're done
-    prevDispatcher = ReactCurrentDispatcher.current
-    ReactCurrentDispatcher.current = Dispatcher
-
-    visitChildren(getChildrenArray(element), queue, fn)
+    visitChildrenWithDispatcher(getChildrenArray(element), queue, fn)
   } catch (error) {
     return Promise.reject(error)
-  } finally {
-    ReactCurrentDispatcher.current = prevDispatcher
   }
 
   return flushFrames(queue, fn)
