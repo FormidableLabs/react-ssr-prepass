@@ -201,7 +201,7 @@ describe('visitElement', () => {
   })
 
   it('walks over forwardRef components', () => {
-    const Test = React.forwardRef(() => <Noop />)
+    const Test = React.forwardRef(Noop)
     const children = visitElement(<Test />, [], () => {})
     expect(children.length).toBe(1)
     expect(children[0].type).toBe(Noop)
