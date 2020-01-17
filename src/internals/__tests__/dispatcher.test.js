@@ -29,3 +29,18 @@ describe('useCallback', () => {
     expect(Dispatcher.useCallback(fn)).toBe(fn)
   })
 })
+
+describe('useTransition', () => {
+  it('returns noop and false', () => {
+    const result = Dispatcher.useTransition()
+    expect(typeof result[0]).toBe('function')
+    expect(result[1]).toBe(false)
+  })
+})
+
+describe('useDeferredValue', () => {
+  it('returns itself', () => {
+    const value = {}
+    expect(Dispatcher.useDeferredValue(value)).toBe(value)
+  })
+})
