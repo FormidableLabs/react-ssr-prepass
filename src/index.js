@@ -21,13 +21,13 @@ const {
 function wrapWithDispatcher<T: Function>(exec: T): T {
   // $FlowFixMe
   return (...args) => {
-    let prevDispatcher = ReactCurrentDispatcher.current
+    const prevDispatcher = ReactCurrentDispatcher.current
 
     try {
       // The "Dispatcher" is what handles hook calls and
       // a React internal that needs to be set to our dispatcher
       ReactCurrentDispatcher.current = Dispatcher
-      exec(...args)
+      return exec(...args)
     } finally {
       // We're resetting the dispatcher after we're done
       ReactCurrentDispatcher.current = prevDispatcher
@@ -35,10 +35,8 @@ function wrapWithDispatcher<T: Function>(exec: T): T {
   }
 }
 
-const resumeVisitChildrenWithDispatcher = wrapWithDispatcher(
-  resumeVisitChildren
-)
-const visitChildrenWithDispatcher = wrapWithDispatcher(visitChildren)
+const resumeWithDispatcher = wrapWithDispatcher(resumeVisitChildren)
+const visitWithDispatcher = wrapWithDispatcher(visitChildren)
 const updateWithDispatcher = wrapWithDispatcher(update)
 
 /** visitChildren walks all elements (depth-first) and while it walks the
@@ -54,8 +52,12 @@ const updateWithFrame = (
   if (frame.kind === 'frame.yield') {
     return new Promise((resolve, reject) => {
       setImmediate(() => {
-        resumeVisitChildrenWithDispatcher(frame, queue, visitor)
-        resolve()
+        try {
+          resumeWithDispatcher(frame, queue, visitor)
+          resolve()
+        } catch (err) {
+          reject(err)
+        }
       })
     })
   }
@@ -66,16 +68,18 @@ const updateWithFrame = (
     const children = updateWithDispatcher(frame, queue)
     // Now continue walking the previously suspended component's
     // children (which might also suspend)
-    visitChildrenWithDispatcher(getChildrenArray(children), queue, visitor)
+    visitWithDispatcher(getChildrenArray(children), queue, visitor)
   })
 }
 
-const flushFrames = (queue: Frame[], visitor: Visitor): Promise<void> =>
-  queue.length === 0
-    ? Promise.resolve()
-    : updateWithFrame(queue.shift(), queue, visitor).then(() =>
+const flushFrames = (queue: Frame[], visitor: Visitor): Promise<void> => {
+  const frame = queue.shift()
+  return frame
+    ? updateWithFrame(frame, queue, visitor).then(() =>
         flushFrames(queue, visitor)
       )
+    : Promise.resolve()
+}
 
 const defaultVisitor = () => undefined
 
@@ -90,7 +94,7 @@ const renderPrepass = (element: Node, visitor?: Visitor): Promise<void> => {
   setCurrentContextStore(new Map())
 
   try {
-    visitChildrenWithDispatcher(getChildrenArray(element), queue, fn)
+    visitWithDispatcher(getChildrenArray(element), queue, fn)
   } catch (error) {
     return Promise.reject(error)
   }

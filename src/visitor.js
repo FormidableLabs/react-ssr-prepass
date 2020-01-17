@@ -268,17 +268,14 @@ export const resumeVisitChildren = (
 }
 
 export const update = (frame: Frame, queue: Frame[]): Node => {
-  let children: Node = []
-
-  // Update the component after we've suspended to rerender it,
-  // at which point we'll actually get its children
-  if (frame.kind === 'frame.class') {
-    children = updateClassComponent(queue, frame)
-  } else if (frame.kind === 'frame.hooks') {
-    children = updateFunctionComponent(queue, frame)
-  } else if (frame.kind === 'frame.lazy') {
-    children = updateLazyComponent(queue, frame)
+  switch (frame.kind) {
+    case 'frame.class':
+      return updateClassComponent(queue, frame)
+    case 'frame.hooks':
+      return updateFunctionComponent(queue, frame)
+    case 'frame.lazy':
+      return updateLazyComponent(queue, frame)
+    default:
+      return []
   }
-
-  return children
 }
