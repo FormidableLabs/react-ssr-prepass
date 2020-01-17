@@ -113,6 +113,7 @@ export function renderWithHooks(
   props: any,
   refOrContext: any
 ): any {
+  workInProgressHook = null
   let children = Component(props, refOrContext)
 
   // NOTE: Excessive rerenders won't throw but will instead abort rendering
