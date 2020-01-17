@@ -11,8 +11,11 @@ import {
 
 import {
   mountFunctionComponent,
+  updateFunctionComponent,
   mountClassComponent,
+  updateClassComponent,
   mountLazyComponent,
+  updateLazyComponent,
   mountStyledComponent,
   isStyledElement
 } from './render'
@@ -261,5 +264,18 @@ export const resumeVisitChildren = (
 
   if (hasYielded) {
     queue.unshift(makeYieldFrame(frame.children, frame.map, frame.store))
+  }
+}
+
+export const update = (frame: Frame, queue: Frame[]): Node => {
+  switch (frame.kind) {
+    case 'frame.class':
+      return updateClassComponent(queue, frame)
+    case 'frame.hooks':
+      return updateFunctionComponent(queue, frame)
+    case 'frame.lazy':
+      return updateLazyComponent(queue, frame)
+    default:
+      return []
   }
 }
