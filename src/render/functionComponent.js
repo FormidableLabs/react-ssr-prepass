@@ -86,7 +86,7 @@ export const mount = (
 
 /** Update a previously suspended function component */
 export const update = (queue: Frame[], frame: HooksFrame) => {
-  setFirstHook(frame.hook)
+  setFirstHook(null)
   setCurrentIdentity(frame.id)
   setCurrentContextMap(frame.contextMap)
   setCurrentContextStore(frame.contextStore)
