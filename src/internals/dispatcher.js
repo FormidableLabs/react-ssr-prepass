@@ -305,8 +305,11 @@ function useCallback<T>(callback: T, deps: Array<mixed> | void | null): T {
 
 function noop(): void {}
 
-function useTransition(): [() => void, boolean] {
-  return [noop, false]
+function useTransition(): [(callback: () => void) => void, boolean] {
+  const startTransition = callback => {
+    callback()
+  }
+  return [startTransition, false]
 }
 
 function useDeferredValue<T>(input: T): T {
