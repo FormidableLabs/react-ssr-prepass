@@ -15,9 +15,7 @@ import {
   mountClassComponent,
   updateClassComponent,
   mountLazyComponent,
-  updateLazyComponent,
-  mountStyledComponent,
-  isStyledElement
+  updateLazyComponent
 } from './render'
 
 import type {
@@ -143,13 +141,6 @@ export const visitElement = (
 
     case REACT_FORWARD_REF_TYPE: {
       const refElement = ((element: any): ForwardRefElement)
-
-      // If we find a StyledComponent, we trigger a specific optimisation
-      // that allows quick rendering of them without computing styles
-      if (isStyledElement(refElement)) {
-        return mountStyledComponent(refElement)
-      }
-
       const { render: type, defaultProps } = refElement.type
       const props = computeProps(refElement.props, defaultProps)
       const fauxElement = (createElement((render: any), props): any)

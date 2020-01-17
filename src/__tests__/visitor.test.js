@@ -11,7 +11,6 @@ import React, {
 } from 'react'
 
 import { createPortal } from 'react-dom'
-import styled from 'styled-components'
 
 import {
   Dispatcher,
@@ -30,10 +29,6 @@ const {
   ReactCurrentDispatcher
 } = (React: any).__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED
 
-const {
-  StyleSheet
-} = require('styled-components').__DO_NOT_USE_OR_YOU_WILL_BE_HAUNTED_BY_SPOOKY_GHOSTS
-
 let prevDispatcher = null
 
 beforeEach(() => {
@@ -51,10 +46,6 @@ afterEach(() => {
 const Noop = () => null
 
 describe('visitElement', () => {
-  beforeEach(() => {
-    StyleSheet.reset(true)
-  })
-
   it('walks Fragments', () => {
     const element = (
       <Fragment>
@@ -105,43 +96,6 @@ describe('visitElement', () => {
     expect(children.length).toBe(2)
     expect(children[0].type).toBe(Noop)
     expect(children[1].type).toBe(Noop)
-  })
-
-  it('walks StyledComponent DOM elements', () => {
-    const Comp = styled.div``
-    const children = visitElement(
-      <Comp>
-        <Noop />
-      </Comp>,
-      [],
-      () => {}
-    )
-
-    expect(children.length).toBe(1)
-    expect(children[0].type).toBe(Noop)
-    expect(StyleSheet.master.tags.length).toBe(1)
-
-    const tag = StyleSheet.master.tags[0]
-    expect(tag.css().trim()).toBe('')
-
-    expect(Object.keys(StyleSheet.master.deferred)).toEqual([
-      expect.any(String)
-    ])
-  })
-
-  it('walks StyledComponent wrapper elements', () => {
-    const Comp = styled(Noop)``
-    const children = visitElement(<Comp />, [], () => {})
-
-    expect(children.length).toBe(1)
-    expect(StyleSheet.master.tags.length).toBe(1)
-
-    const tag = StyleSheet.master.tags[0]
-    expect(tag.css().trim()).toBe('')
-
-    expect(Object.keys(StyleSheet.master.deferred)).toEqual([
-      expect.any(String)
-    ])
   })
 
   it('walks Providers and Consumers', () => {
