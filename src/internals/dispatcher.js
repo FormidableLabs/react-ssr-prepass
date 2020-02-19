@@ -40,8 +40,6 @@ export const getCurrentIdentity = (): Identity => {
 
 let firstWorkInProgressHook: Hook | null = null
 let workInProgressHook: Hook | null = null
-// Whether the work-in-progress hook is a re-rendered hook
-let isReRender: boolean = false
 // Whether an update was scheduled during the currently executing render pass.
 let didScheduleRenderPhaseUpdate: boolean = false
 // Lazily created map of render-phase updates
@@ -87,25 +85,20 @@ function createWorkInProgressHook(): Hook {
   if (workInProgressHook === null) {
     // This is the first hook in the list
     if (firstWorkInProgressHook === null) {
-      isReRender = false
-      firstWorkInProgressHook = workInProgressHook = createHook()
+      return (firstWorkInProgressHook = workInProgressHook = createHook())
     } else {
       // There's already a work-in-progress. Reuse it.
-      isReRender = true
-      workInProgressHook = firstWorkInProgressHook
+      return (workInProgressHook = firstWorkInProgressHook)
     }
   } else {
     if (workInProgressHook.next === null) {
-      isReRender = false
       // Append to the end of the list
-      workInProgressHook = workInProgressHook.next = createHook()
+      return (workInProgressHook = workInProgressHook.next = createHook())
     } else {
       // There's already a work-in-progress. Reuse it.
-      isReRender = true
-      workInProgressHook = workInProgressHook.next
+      return (workInProgressHook = workInProgressHook.next)
     }
   }
-  return workInProgressHook
 }
 
 export function renderWithHooks(
@@ -200,7 +193,7 @@ function useReducer<S, I, A>(
   const dispatch: Dispatch<A> =
     queue.dispatch || (queue.dispatch = dispatchAction.bind(null, id, queue))
 
-  if (isReRender && renderPhaseUpdates !== null) {
+  if (renderPhaseUpdates !== null) {
     // This is a re-render. Apply the new render phase updates to the previous
     // current hook.
     // Render phase updates are stored in a map of queue -> linked list
