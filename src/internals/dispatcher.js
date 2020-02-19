@@ -175,34 +175,10 @@ function useReducer<S, I, A>(
   const id = getCurrentIdentity()
   workInProgressHook = createWorkInProgressHook()
 
-  if (isReRender) {
-    // This is a re-render. Apply the new render phase updates to the previous
-    // current hook.
-    const queue: UpdateQueue<A> = (workInProgressHook.queue: any)
-    const dispatch: Dispatch<A> = (queue.dispatch: any)
-    if (renderPhaseUpdates !== null) {
-      // Render phase updates are stored in a map of queue -> linked list
-      const firstRenderPhaseUpdate = renderPhaseUpdates.get(queue)
-      if (firstRenderPhaseUpdate !== undefined) {
-        renderPhaseUpdates.delete(queue)
-        let newState = workInProgressHook.memoizedState
-        let update = firstRenderPhaseUpdate
-        do {
-          // Process this render phase update. We don't have to check the
-          // priority because it will always be the same as the current
-          // render's.
-          const action = update.action
-          newState = reducer(newState, action)
-          update = update.next
-        } while (update !== null)
-
-        workInProgressHook.memoizedState = newState
-
-        return [newState, dispatch]
-      }
-    }
-    return [workInProgressHook.memoizedState, dispatch]
-  } else {
+  // In the case of a re-render after a suspense, the initial state
+  // may not be set, so instead of initialising if `!isRerender`, we
+  // check whether `queue` is set
+  if (workInProgressHook.queue === null) {
     let initialState
     if (reducer === basicStateReducer) {
       // Special case for `useState`.
@@ -214,18 +190,39 @@ function useReducer<S, I, A>(
       initialState =
         init !== undefined ? init(initialArg) : ((initialArg: any): S)
     }
+
     workInProgressHook.memoizedState = initialState
-    const queue: UpdateQueue<A> = (workInProgressHook.queue = {
-      last: null,
-      dispatch: null
-    })
-    const dispatch: Dispatch<A> = (queue.dispatch = (dispatchAction.bind(
-      null,
-      id,
-      queue
-    ): any))
-    return [workInProgressHook.memoizedState, dispatch]
   }
+
+  const queue: UpdateQueue<A> =
+    workInProgressHook.queue ||
+    (workInProgressHook.queue = { last: null, dispatch: null })
+  const dispatch: Dispatch<A> =
+    queue.dispatch || (queue.dispatch = dispatchAction.bind(null, id, queue))
+
+  if (isReRender && renderPhaseUpdates !== null) {
+    // This is a re-render. Apply the new render phase updates to the previous
+    // current hook.
+    // Render phase updates are stored in a map of queue -> linked list
+    const firstRenderPhaseUpdate = renderPhaseUpdates.get(queue)
+    if (firstRenderPhaseUpdate !== undefined) {
+      renderPhaseUpdates.delete(queue)
+      let newState = workInProgressHook.memoizedState
+      let update = firstRenderPhaseUpdate
+      do {
+        // Process this render phase update. We don't have to check the
+        // priority because it will always be the same as the current
+        // render's.
+        const action = update.action
+        newState = reducer(newState, action)
+        update = update.next
+      } while (update !== null)
+
+      workInProgressHook.memoizedState = newState
+    }
+  }
+
+  return [workInProgressHook.memoizedState, dispatch]
 }
 
 function useMemo<T>(nextCreate: () => T, deps: Array<mixed> | void | null): T {
