@@ -23,13 +23,6 @@ describe('useEffect', () => {
   })
 })
 
-describe('useCallback', () => {
-  it('is an identity function', () => {
-    const fn = () => {}
-    expect(Dispatcher.useCallback(fn)).toBe(fn)
-  })
-})
-
 describe('useTransition', () => {
   it('returns noop and false', () => {
     const result = Dispatcher.useTransition()
