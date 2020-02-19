@@ -60,14 +60,10 @@ function areHookInputsEqual(
 ) {
   // NOTE: The warnings that are used in ReactPartialRendererHooks are obsolete
   // in a prepass, since these issues will be caught by a subsequent renderer anyway
-  if (prevDeps === null) {
-    return false
-  }
+  if (prevDeps === null) return false
 
   for (let i = 0; i < prevDeps.length && i < nextDeps.length; i++) {
-    if (!is(nextDeps[i], prevDeps[i])) {
-      return false
-    }
+    if (!is(nextDeps[i], prevDeps[i])) return false
   }
 
   return true
@@ -223,16 +219,11 @@ function useMemo<T>(nextCreate: () => T, deps: Array<mixed> | void | null): T {
   workInProgressHook = createWorkInProgressHook()
 
   const nextDeps = deps === undefined ? null : deps
-
-  if (workInProgressHook !== null) {
-    const prevState = workInProgressHook.memoizedState
-    if (prevState !== null) {
-      if (nextDeps !== null) {
-        const prevDeps = prevState[1]
-        if (areHookInputsEqual(nextDeps, prevDeps)) {
-          return prevState[0]
-        }
-      }
+  const prevState = workInProgressHook.memoizedState
+  if (prevState !== null && nextDeps !== null) {
+    const prevDeps = prevState[1]
+    if (areHookInputsEqual(nextDeps, prevDeps)) {
+      return prevState[0]
     }
   }
 
