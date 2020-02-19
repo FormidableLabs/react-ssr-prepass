@@ -224,6 +224,33 @@ describe('renderPrepass', () => {
       })
     })
 
+    it("handles suspenses thrown in useState's initialState initialiser", () => {
+      const getValue = jest
+        .fn()
+        .mockImplementationOnce(() => {
+          throw Promise.resolve()
+        })
+        .mockImplementation(() => 'test')
+
+      const Inner = jest.fn(props => {
+        expect(props.state).toBe('test')
+      })
+
+      const Outer = jest.fn(() => {
+        const [state] = useState(() => {
+          // This will trigger suspense:
+          return getValue()
+        })
+
+        return <Inner state={state} />
+      })
+
+      return renderPrepass(<Outer />).then(() => {
+        expect(Outer).toHaveBeenCalled()
+        expect(Inner).toHaveBeenCalled()
+      })
+    })
+
     it('ignores thrown non-promises', () => {
       const Outer = () => {
         throw new Error('test')
@@ -435,7 +462,7 @@ describe('renderPrepass', () => {
       })
     })
 
-    it('supports rendering previouslt resolved lazy components', () => {
+    it('supports rendering previously resolved lazy components', () => {
       const Inner = jest.fn(() => null)
       const loadInner = jest.fn().mockResolvedValueOnce(Inner)
       const Outer = React.lazy(loadInner)
