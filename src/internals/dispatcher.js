@@ -281,21 +281,7 @@ function dispatchAction<A>(
 }
 
 function useCallback<T>(callback: T, deps: Array<mixed> | void | null): T {
-  getCurrentIdentity()
-  workInProgressHook = createWorkInProgressHook()
-
-  const nextDeps = deps === undefined ? null : deps
-  const prevState = workInProgressHook.memoizedState
-  if (prevState !== null && nextDeps !== null) {
-    const prevDeps = prevState[1]
-    if (areHookInputsEqual(nextDeps, prevDeps)) {
-      return prevState[0]
-    }
-  }
-
-  const nextCallback = callback
-  workInProgressHook.memoizedState = [nextCallback, nextDeps]
-  return nextCallback
+  return useMemo(() => callback, deps)
 }
 
 function noop(): void {}
