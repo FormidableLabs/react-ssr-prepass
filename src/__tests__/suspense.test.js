@@ -26,11 +26,11 @@ describe('renderPrepass', () => {
 
       expect(Inner).toHaveBeenCalledTimes(0)
 
-      setImmediate(() => {
-        setImmediate(() => {
+      Promise.resolve()
+        .then(() => {})
+        .then(() => {
           expect(Inner).toHaveBeenCalledTimes(1)
         })
-      })
 
       return render$.then(() => {
         expect(Inner).toHaveBeenCalledTimes(1)

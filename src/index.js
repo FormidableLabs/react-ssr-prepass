@@ -50,16 +50,11 @@ const updateWithFrame = (
   visitor: Visitor
 ): Promise<void> => {
   if (frame.kind === 'frame.yield') {
-    return new Promise((resolve, reject) => {
-      setImmediate(() => {
-        try {
-          resumeWithDispatcher(frame, queue, visitor)
-          resolve()
-        } catch (err) {
-          reject(err)
-        }
+    return Promise.resolve() // wait for next tick
+      .then(() => {
+        // promise api note: if this `throw`s, the promise will reject
+        resumeWithDispatcher(frame, queue, visitor)
       })
-    })
   }
 
   return frame.thenable.then(() => {
