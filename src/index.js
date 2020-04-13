@@ -11,6 +11,10 @@ import {
   Dispatcher
 } from './internals'
 
+// `isServer` will be `true` in node & jest, & `false` in
+// the browser where the bundler shims the `process` object
+const isServer = !process.browser
+
 const {
   ReactCurrentDispatcher
 } = (React: any).__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED
@@ -51,14 +55,15 @@ const updateWithFrame = (
 ): Promise<void> => {
   if (frame.kind === 'frame.yield') {
     return new Promise((resolve, reject) => {
-      setImmediate(() => {
+      const resume = () => {
         try {
           resumeWithDispatcher(frame, queue, visitor)
           resolve()
         } catch (err) {
           reject(err)
         }
-      })
+      }
+      isServer ? setImmediate(resume) : resume()
     })
   }
 
