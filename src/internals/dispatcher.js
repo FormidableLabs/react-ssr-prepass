@@ -250,7 +250,7 @@ function dispatchAction<A>(
   queue: UpdateQueue<A>,
   action: A
 ) {
-  if (componentIdentity === getCurrentIdentity()) {
+  if (componentIdentity === currentIdentity) {
     // This is a render phase update. Stash it in a lazily-created map of
     // queue -> linked list of updates. After this render pass, we'll restart
     // and apply the stashed updates on top of the work-in-progress hook.
