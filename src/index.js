@@ -11,9 +11,10 @@ import {
   Dispatcher
 } from './internals'
 
-// `isServer` will be `true` in node & jest, & `false` in
-// the browser where the bundler shims the `process` object
-const isServer = !process.browser
+// In the presence of setImmediate, i.e. on Node, we'll enable the
+// yielding behavior that gives the event loop a chance to continue
+// running when the prepasses would otherwise take too long
+const SHOULD_YIELD = typeof setImmediate === 'function';
 
 const {
   ReactCurrentDispatcher
@@ -63,7 +64,11 @@ const updateWithFrame = (
           reject(err)
         }
       }
-      isServer ? setImmediate(resume) : resume()
+      if (SHOULD_YIELD) {
+        setImmediate(resume)
+      } else {
+        resume()
+      }
     })
   }
 
