@@ -67,6 +67,11 @@ import {
   REACT_LAZY_TYPE
 } from './symbols'
 
+// In the presence of setImmediate, i.e. on Node, we'll enable the
+// yielding behavior that gives the event loop a chance to continue
+// running when the prepasses would otherwise take too long
+export const SHOULD_YIELD = typeof setImmediate === 'function';
+
 // Time in ms after which the otherwise synchronous visitor yields so that
 // the event loop is not interrupted for too long
 const YIELD_AFTER_MS = process.env.NODE_ENV !== 'production' ? 20 : 5
@@ -189,7 +194,7 @@ const visitLoop = (
       restoreContextStore(traversalStore.pop())
     }
 
-    if (Date.now() - start > YIELD_AFTER_MS) {
+    if (SHOULD_YIELD && (Date.now() - start > YIELD_AFTER_MS)) {
       return true
     }
   }

@@ -2,7 +2,7 @@
 
 import React, { type Node, type Element } from 'react'
 import type { Visitor, YieldFrame, Frame, AbstractElement } from './types'
-import { visitChildren, resumeVisitChildren, update } from './visitor'
+import { visitChildren, resumeVisitChildren, update, SHOULD_YIELD } from './visitor'
 import { getChildrenArray } from './element'
 
 import {
@@ -10,11 +10,6 @@ import {
   setCurrentContextMap,
   Dispatcher
 } from './internals'
-
-// In the presence of setImmediate, i.e. on Node, we'll enable the
-// yielding behavior that gives the event loop a chance to continue
-// running when the prepasses would otherwise take too long
-const SHOULD_YIELD = typeof setImmediate === 'function';
 
 const {
   ReactCurrentDispatcher
