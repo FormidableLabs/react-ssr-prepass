@@ -2,7 +2,7 @@
 
 import React, { type Node, type Element } from 'react'
 import type { Visitor, YieldFrame, Frame, AbstractElement } from './types'
-import { visitChildren, resumeVisitChildren, update } from './visitor'
+import { visitChildren, resumeVisitChildren, update, SHOULD_YIELD } from './visitor'
 import { getChildrenArray } from './element'
 
 import {
@@ -51,14 +51,19 @@ const updateWithFrame = (
 ): Promise<void> => {
   if (frame.kind === 'frame.yield') {
     return new Promise((resolve, reject) => {
-      setImmediate(() => {
+      const resume = () => {
         try {
           resumeWithDispatcher(frame, queue, visitor)
           resolve()
         } catch (err) {
           reject(err)
         }
-      })
+      }
+      if (SHOULD_YIELD) {
+        setImmediate(resume)
+      } else {
+        resume()
+      }
     })
   }
 
