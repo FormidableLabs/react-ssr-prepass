@@ -1,8 +1,9 @@
-import commonjs from 'rollup-plugin-commonjs'
-import nodeResolve from 'rollup-plugin-node-resolve'
-import buble from 'rollup-plugin-buble'
+import commonjs from '@rollup/plugin-commonjs'
+import nodeResolve from '@rollup/plugin-node-resolve'
+import buble from '@rollup/plugin-buble'
 import babel from 'rollup-plugin-babel'
 import { terser } from 'rollup-plugin-terser'
+import compiler from '@ampproject/rollup-plugin-closure-compiler'
 import replace from 'rollup-plugin-replace'
 
 const pkgInfo = require('./package.json')
@@ -19,7 +20,7 @@ if (pkgInfo.dependencies) {
 }
 
 const externalPredicate = new RegExp(`^(${external.join('|')})($|/)`)
-const externalTest = id => {
+const externalTest = (id) => {
   if (id === 'babel-plugin-transform-async-to-promises/helpers') {
     return false
   }
@@ -116,6 +117,10 @@ const makePlugins = (isProduction = false) => [
   isProduction &&
     replace({
       'process.env.NODE_ENV': JSON.stringify('production')
+    }),
+  isProduction &&
+    compiler({
+      compilation_level: 'SIMPLE_OPTIMIZATIONS'
     }),
   isProduction ? terserMinified : terserPretty
 ]
