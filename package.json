@@ -15,6 +15,7 @@
     "dist",
     "index.d.ts"
   ],
+  "sideEffects": false,
   "types": "index.d.ts",
   "scripts": {
     "prepublishOnly": "run-s build",
