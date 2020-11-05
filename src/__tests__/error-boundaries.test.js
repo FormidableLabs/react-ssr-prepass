@@ -77,6 +77,66 @@ it('guards against infinite render loops', () => {
   })
 })
 
+it('returns to the next error boundary on a suspense error', () => {
+  const Inner = jest.fn(() => null)
+
+  const Throw = jest.fn(() => {
+    throw Promise.reject(new Error('Suspense!'))
+  })
+
+  class Outer extends Component {
+    static getDerivedStateFromProps() {
+      return { error: false }
+    }
+
+    static getDerivedStateFromError(error) {
+      expect(error).not.toBeInstanceOf(Promise)
+      return { error: true }
+    }
+
+    render() {
+      return this.state.error ? <Inner /> : <Throw />
+    }
+  }
+
+  const render$ = renderPrepass(<Outer />)
+  expect(Throw).toHaveBeenCalledTimes(1)
+  expect(Inner).not.toHaveBeenCalled()
+
+  return render$.then(() => {
+    expect(Inner).toHaveBeenCalledTimes(1)
+  })
+})
+
+it('returns to the next error boundary on a nested error', () => {
+  const Throw = jest.fn(({ depth }) => {
+    if (depth >= 4) {
+      throw new Error('' + depth)
+    }
+
+    return <Throw depth={depth + 1} />
+  })
+
+  class Outer extends Component {
+    static getDerivedStateFromProps() {
+      return { error: false }
+    }
+
+    static getDerivedStateFromError(error) {
+      expect(error.message).toBe('4')
+      return { error: true }
+    }
+
+    render() {
+      return !this.state.error ? <Throw depth={1} /> : null
+    }
+  }
+
+  renderPrepass(<Outer />).then(() => {
+    expect(Throw).toHaveBeenCalledTimes(4)
+  })
+})
+
 it('always returns to the correct error boundary', () => {
   const values = []
 

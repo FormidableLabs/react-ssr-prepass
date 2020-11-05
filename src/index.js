@@ -38,7 +38,7 @@ const flushFrames = (queue: Frame[], visitor: Visitor): Promise<void> => {
     (error: Error) => {
       if (!frame.errorFrame) throw error
       frame.errorFrame.error = error
-      update(frame, queue, visitor)
+      update(frame.errorFrame, queue, visitor)
     }
   )
 }
