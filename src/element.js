@@ -2,7 +2,6 @@
 
 import { Children, type Node, type Element, type ComponentType } from 'react'
 import type { AbstractContext, AbstractElement } from './types'
-import * as ReactIs from 'react-is'
 
 import {
   type ReactSymbol,
@@ -74,8 +73,7 @@ const toArray: (node?: Node) => Array<ScalarNode | AbstractElement> =
 /** Checks whether the `node` is an AbstractElement */
 const isAbstractElement = (
   node: ScalarNode | AbstractElement
-): boolean %checks =>
-  node !== null && typeof node === 'object'
+): boolean %checks => node !== null && typeof node === 'object'
 
 /** Returns a flat AbstractElement array for a given AbstractElement node */
 export const getChildrenArray = (node?: Node): AbstractElement[] => {
