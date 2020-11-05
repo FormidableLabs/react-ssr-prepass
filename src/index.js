@@ -2,42 +2,20 @@
 
 import React, { type Node, type Element } from 'react'
 import type { Visitor, YieldFrame, Frame, AbstractElement } from './types'
-import { visitChildren, resumeVisitChildren, update, SHOULD_YIELD } from './visitor'
+import { visit, update, SHOULD_YIELD } from './visitor'
 import { getChildrenArray } from './element'
 
 import {
   setCurrentContextStore,
   setCurrentContextMap,
+  setCurrentErrorFrame,
+  getCurrentErrorFrame,
   Dispatcher
 } from './internals'
 
 const {
   ReactCurrentDispatcher
 } = (React: any).__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED
-
-/** wrapWithDispatcher accepts a function and wraps it
-  in one that sets up our ReactCurrentDispatcher and
-  resets it afterwards */
-function wrapWithDispatcher<T: Function>(exec: T): T {
-  // $FlowFixMe
-  return (...args) => {
-    const prevDispatcher = ReactCurrentDispatcher.current
-
-    try {
-      // The "Dispatcher" is what handles hook calls and
-      // a React internal that needs to be set to our dispatcher
-      ReactCurrentDispatcher.current = Dispatcher
-      return exec(...args)
-    } finally {
-      // We're resetting the dispatcher after we're done
-      ReactCurrentDispatcher.current = prevDispatcher
-    }
-  }
-}
-
-const resumeWithDispatcher = wrapWithDispatcher(resumeVisitChildren)
-const visitWithDispatcher = wrapWithDispatcher(visitChildren)
-const updateWithDispatcher = wrapWithDispatcher(update)
 
 /** visitChildren walks all elements (depth-first) and while it walks the
     element tree some components will suspend and put a `Frame` onto
@@ -49,41 +27,30 @@ const updateWithFrame = (
   queue: Frame[],
   visitor: Visitor
 ): Promise<void> => {
-  if (frame.kind === 'frame.yield') {
-    return new Promise((resolve, reject) => {
-      const resume = () => {
-        try {
-          resumeWithDispatcher(frame, queue, visitor)
-          resolve()
-        } catch (err) {
-          reject(err)
-        }
-      }
-      if (SHOULD_YIELD) {
-        setImmediate(resume)
-      } else {
-        resume()
-      }
+  if (SHOULD_YIELD && frame.kind === 'frame.yield') {
+    frame.thenable = new Promise((resolve, reject) => {
+      setImmediate(resolve)
     })
   }
 
-  return frame.thenable.then(() => {
-    // Update the component after we've suspended to rerender it,
-    // at which point we'll actually get its children
-    const children = updateWithDispatcher(frame, queue)
-    // Now continue walking the previously suspended component's
-    // children (which might also suspend)
-    visitWithDispatcher(getChildrenArray(children), queue, visitor)
-  })
+  return Promise.resolve(frame.thenable)
+    .catch((error) => {
+      if (!frame.errorFrame) throw error
+      frame.errorFrame.error = error
+      update(frame, queue, visitor)
+    })
+    .then(() => {
+      update(frame, queue, visitor)
+    })
 }
 
 const flushFrames = (queue: Frame[], visitor: Visitor): Promise<void> => {
   const frame = queue.shift()
-  return frame
-    ? updateWithFrame(frame, queue, visitor).then(() =>
-        flushFrames(queue, visitor)
-      )
-    : Promise.resolve()
+  if (!frame) return Promise.resolve()
+
+  return updateWithFrame(frame, queue, visitor).then(() =>
+    flushFrames(queue, visitor)
+  )
 }
 
 const defaultVisitor = () => undefined
@@ -97,9 +64,10 @@ const renderPrepass = (element: Node, visitor?: Visitor): Promise<void> => {
   // its current state
   setCurrentContextMap({})
   setCurrentContextStore(new Map())
+  setCurrentErrorFrame(null)
 
   try {
-    visitWithDispatcher(getChildrenArray(element), queue, fn)
+    visit(getChildrenArray(element), queue, fn)
   } catch (error) {
     return Promise.reject(error)
   }

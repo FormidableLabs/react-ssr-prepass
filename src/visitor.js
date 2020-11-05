@@ -1,6 +1,6 @@
 // @flow
 
-import { type Node, type ComponentType, createElement } from 'react'
+import React, { type Node, type ComponentType, createElement } from 'react'
 
 import {
   typeOf,
@@ -21,6 +21,7 @@ import {
 import type {
   Visitor,
   YieldFrame,
+  ClassFrame,
   Frame,
   ContextMap,
   ContextEntry,
@@ -49,7 +50,10 @@ import {
   restoreContextStore,
   readContextValue,
   setContextValue,
-  setCurrentIdentity
+  setCurrentIdentity,
+  setCurrentErrorFrame,
+  getCurrentErrorFrame,
+  Dispatcher
 } from './internals'
 
 import {
@@ -67,10 +71,14 @@ import {
   REACT_LAZY_TYPE
 } from './symbols'
 
+const {
+  ReactCurrentDispatcher
+} = (React: any).__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED
+
 // In the presence of setImmediate, i.e. on Node, we'll enable the
 // yielding behavior that gives the event loop a chance to continue
 // running when the prepasses would otherwise take too long
-export const SHOULD_YIELD = typeof setImmediate === 'function';
+export const SHOULD_YIELD = typeof setImmediate === 'function'
 
 // Time in ms after which the otherwise synchronous visitor yields so that
 // the event loop is not interrupted for too long
@@ -176,101 +184,147 @@ const visitLoop = (
   traversalChildren: AbstractElement[][],
   traversalMap: Array<void | ContextMap>,
   traversalStore: Array<void | ContextEntry>,
+  traversalErrorFrame: Array<null | ClassFrame>,
   queue: Frame[],
   visitor: Visitor
 ): boolean => {
+  const prevDispatcher = ReactCurrentDispatcher.current
   const start = Date.now()
 
-  while (traversalChildren.length > 0) {
-    const element = traversalChildren[traversalChildren.length - 1].shift()
-    if (element !== undefined) {
-      const children = visitElement(element, queue, visitor)
-      traversalChildren.push(children)
-      traversalMap.push(flushPrevContextMap())
-      traversalStore.push(flushPrevContextStore())
-    } else {
-      traversalChildren.pop()
-      restoreContextMap(traversalMap.pop())
-      restoreContextStore(traversalStore.pop())
+  try {
+    ReactCurrentDispatcher.current = Dispatcher
+    while (traversalChildren.length > 0) {
+      const element = traversalChildren[traversalChildren.length - 1].shift()
+      if (element !== undefined) {
+        const children = visitElement(element, queue, visitor)
+        traversalChildren.push(children)
+        traversalMap.push(flushPrevContextMap())
+        traversalStore.push(flushPrevContextStore())
+        traversalErrorFrame.push(getCurrentErrorFrame())
+      } else {
+        traversalChildren.pop()
+        restoreContextMap(traversalMap.pop())
+        restoreContextStore(traversalStore.pop())
+        setCurrentErrorFrame(traversalErrorFrame.pop())
+      }
+
+      if (SHOULD_YIELD && Date.now() - start > YIELD_AFTER_MS) {
+        return true
+      }
     }
 
-    if (SHOULD_YIELD && (Date.now() - start > YIELD_AFTER_MS)) {
-      return true
-    }
+    return false
+  } catch (error) {
+    const errorFrame = getCurrentErrorFrame()
+    if (!errorFrame) throw error
+    errorFrame.error = error
+    queue.push(errorFrame)
+    return false
+  } finally {
+    ReactCurrentDispatcher.current = prevDispatcher
   }
-
-  return false
 }
 
 const makeYieldFrame = (
   traversalChildren: AbstractElement[][],
   traversalMap: Array<void | ContextMap>,
-  traversalStore: Array<void | ContextEntry>
+  traversalStore: Array<void | ContextEntry>,
+  traversalErrorFrame: Array<null | ClassFrame>
 ): Frame => ({
   contextMap: getCurrentContextMap(),
   contextStore: getCurrentContextStore(),
-  thenable: Promise.resolve(),
+  errorFrame: getCurrentErrorFrame(),
+  thenable: null,
   kind: 'frame.yield',
-  children: traversalChildren,
-  map: traversalMap,
-  store: traversalStore
+  traversalChildren,
+  traversalMap,
+  traversalStore,
+  traversalErrorFrame
 })
 
-export const visitChildren = (
+export const visit = (
   init: AbstractElement[],
   queue: Frame[],
   visitor: Visitor
 ) => {
+  if (!init.length) return
+
   const traversalChildren: AbstractElement[][] = [init]
   const traversalMap: Array<void | ContextMap> = [flushPrevContextMap()]
   const traversalStore: Array<void | ContextEntry> = [flushPrevContextStore()]
+  const traversalErrorFrame: Array<null | ClassFrame> = [getCurrentErrorFrame()]
 
   const hasYielded = visitLoop(
     traversalChildren,
     traversalMap,
     traversalStore,
+    traversalErrorFrame,
     queue,
     visitor
   )
 
   if (hasYielded) {
     queue.unshift(
-      makeYieldFrame(traversalChildren, traversalMap, traversalStore)
+      makeYieldFrame(
+        traversalChildren,
+        traversalMap,
+        traversalStore,
+        traversalErrorFrame
+      )
     )
   }
 }
 
-export const resumeVisitChildren = (
-  frame: YieldFrame,
-  queue: Frame[],
-  visitor: Visitor
-) => {
-  setCurrentIdentity(null)
-  setCurrentContextMap(frame.contextMap)
-  setCurrentContextStore(frame.contextStore)
+export const update = (frame: Frame, queue: Frame[], visitor: Visitor) => {
+  if (frame.kind === 'frame.yield') {
+    setCurrentIdentity(null)
+    setCurrentContextMap(frame.contextMap)
+    setCurrentContextStore(frame.contextStore)
+    setCurrentErrorFrame(frame.errorFrame)
 
-  const hasYielded = visitLoop(
-    frame.children,
-    frame.map,
-    frame.store,
-    queue,
-    visitor
-  )
+    const hasYielded = visitLoop(
+      frame.traversalChildren,
+      frame.traversalMap,
+      frame.traversalStore,
+      frame.traversalErrorFrame,
+      queue,
+      visitor
+    )
 
-  if (hasYielded) {
-    queue.unshift(makeYieldFrame(frame.children, frame.map, frame.store))
-  }
-}
+    if (hasYielded) {
+      queue.unshift(
+        makeYieldFrame(
+          frame.traversalChildren,
+          frame.traversalMap,
+          frame.traversalStore,
+          frame.traversalErrorFrame
+        )
+      )
+    }
+  } else {
+    const prevDispatcher = ReactCurrentDispatcher.current
+    let children = null
 
-export const update = (frame: Frame, queue: Frame[]): Node => {
-  switch (frame.kind) {
-    case 'frame.class':
-      return updateClassComponent(queue, frame)
-    case 'frame.hooks':
-      return updateFunctionComponent(queue, frame)
-    case 'frame.lazy':
-      return updateLazyComponent(queue, frame)
-    default:
-      return []
+    try {
+      ReactCurrentDispatcher.current = Dispatcher
+
+      if (frame.kind === 'frame.class') {
+        children = updateClassComponent(queue, frame)
+      } else if (frame.kind === 'frame.hooks') {
+        children = updateFunctionComponent(queue, frame)
+      } else if (frame.kind === 'frame.lazy') {
+        children = updateLazyComponent(queue, frame)
+      }
+    } catch (error) {
+      const errorFrame = getCurrentErrorFrame()
+      if (!errorFrame) throw error
+      errorFrame.error = error
+      queue.push(errorFrame)
+      children = null
+    } finally {
+      ReactCurrentDispatcher.current = prevDispatcher
+    }
+
+    visit(getChildrenArray(children), queue, visitor)
   }
 }

@@ -9,7 +9,9 @@ import {
   setCurrentContextStore,
   getCurrentContextStore,
   setCurrentContextMap,
-  getCurrentContextMap
+  getCurrentContextMap,
+  setCurrentErrorFrame,
+  getCurrentErrorFrame
 } from '../internals'
 
 const resolve = (type: LazyComponent): Promise<void> => {
@@ -17,7 +19,7 @@ const resolve = (type: LazyComponent): Promise<void> => {
 
   return type
     ._ctor()
-    .then(Component => {
+    .then((Component) => {
       if (typeof Component === 'function') {
         type._result = Component
         type._status = 1 /* SUCCESSFUL */
@@ -59,9 +61,10 @@ export const mount = (
   // If the component has not been fetched yet, suspend this component
   if (type._status !== 2 && type._status !== 1) {
     queue.push({
+      kind: 'frame.lazy',
       contextMap: getCurrentContextMap(),
       contextStore: getCurrentContextStore(),
-      kind: 'frame.lazy',
+      errorFrame: getCurrentErrorFrame(),
       thenable: resolve(type),
       props,
       type
@@ -77,5 +80,6 @@ export const update = (queue: Frame[], frame: LazyFrame): Node => {
   setCurrentIdentity(null)
   setCurrentContextMap(frame.contextMap)
   setCurrentContextStore(frame.contextStore)
+  setCurrentErrorFrame(frame.errorFrame)
   return render(frame.type, frame.props, queue)
 }

@@ -29,6 +29,7 @@ export type DefaultProps = {
 
 export type ComponentStatics = {
   getDerivedStateFromProps?: (props: Object, state: mixed) => mixed,
+  getDerivedStateFromError?: (error: Error) => mixed,
   contextType?: AbstractContext,
   contextTypes?: Object,
   childContextTypes?: Object,

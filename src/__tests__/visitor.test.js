@@ -16,8 +16,10 @@ import {
   Dispatcher,
   setCurrentContextStore,
   setCurrentContextMap,
+  setCurrentErrorFrame,
   getCurrentContextMap,
   getCurrentContextStore,
+  getCurrentErrorFrame,
   flushPrevContextMap,
   flushPrevContextStore,
   readContextValue
@@ -37,6 +39,7 @@ beforeEach(() => {
 
   setCurrentContextMap({})
   setCurrentContextStore(new Map())
+  setCurrentErrorFrame(null)
 })
 
 afterEach(() => {
@@ -61,7 +64,7 @@ describe('visitElement', () => {
   })
 
   it('walks misc. mode-like components', () => {
-    const assert = element => {
+    const assert = (element) => {
       const children = visitElement(element, [], () => {})
       expect(children.length).toBe(1)
       expect(children[0].type).toBe(Noop)
@@ -102,7 +105,7 @@ describe('visitElement', () => {
     const Context = createContext('default')
     const leaf = jest.fn().mockReturnValue(null)
 
-    const makeChild = value => (
+    const makeChild = (value) => (
       <Context.Provider value={value}>
         <Context.Consumer>{leaf}</Context.Consumer>
       </Context.Provider>
@@ -147,6 +150,7 @@ describe('visitElement', () => {
     expect(queue[0]).toMatchObject({
       contextMap: getCurrentContextMap(),
       contextStore: getCurrentContextStore(),
+      errorFrame: getCurrentErrorFrame(),
       thenable: expect.any(Promise),
       kind: 'frame.lazy',
       type: Test,
@@ -207,34 +211,36 @@ describe('visitElement', () => {
   })
 
   it('renders class components with componentWillMount', () => {
-    ;['componentWillMount', 'UNSAFE_componentWillMount'].forEach(methodName => {
-      const onUnmount = jest.fn()
+    ;['componentWillMount', 'UNSAFE_componentWillMount'].forEach(
+      (methodName) => {
+        const onUnmount = jest.fn()
 
-      class Test extends Component {
-        constructor() {
-          super()
+        class Test extends Component {
+          constructor() {
+            super()
 
-          this.state = { value: 'a' }
-          this[methodName] = function() {
-            this.setState({ value: 'b' })
+            this.state = { value: 'a' }
+            this[methodName] = function () {
+              this.setState({ value: 'b' })
+            }
+          }
+
+          componentWillUnmount() {
+            onUnmount()
+          }
+
+          render() {
+            return <Noop>{this.state.value}</Noop>
           }
         }
 
-        componentWillUnmount() {
-          onUnmount()
-        }
-
-        render() {
-          return <Noop>{this.state.value}</Noop>
-        }
+        const children = visitElement(<Test />, [], () => {})
+        expect(children.length).toBe(1)
+        expect(children[0].type).toBe(Noop)
+        expect(children[0].props.children).toBe('b')
+        expect(onUnmount).toHaveBeenCalled()
       }
-
-      const children = visitElement(<Test />, [], () => {})
-      expect(children.length).toBe(1)
-      expect(children[0].type).toBe(Noop)
-      expect(children[0].props.children).toBe('b')
-      expect(onUnmount).toHaveBeenCalled()
-    })
+    )
   })
 
   it('renders class components with legacy context', () => {
@@ -324,7 +330,7 @@ describe('visitElement', () => {
   })
 
   it('renders function components with default props', () => {
-    const Test = props => <Noop>{props.value}</Noop>
+    const Test = (props) => <Noop>{props.value}</Noop>
 
     Test.defaultProps = { value: 'default' }
 
