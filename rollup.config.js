@@ -29,7 +29,6 @@ const externalTest = (id) => {
 }
 
 const terserPretty = terser({
-  sourcemap: true,
   warnings: true,
   ecma: 5,
   keep_fnames: true,
@@ -56,7 +55,6 @@ const terserPretty = terser({
 })
 
 const terserMinified = terser({
-  sourcemap: true,
   warnings: true,
   ecma: 5,
   ie8: false,
