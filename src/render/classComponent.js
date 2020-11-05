@@ -24,10 +24,13 @@ import {
   getCurrentErrorFrame
 } from '../internals'
 
+const RE_RENDER_LIMIT = 25
+
 const createUpdater = () => {
   const queue = []
 
   return {
+    _thrown: 0,
     queue,
     isMounted: () => false,
     enqueueForceUpdate: () => null,
@@ -190,12 +193,21 @@ export const update = (queue: Frame[], frame: ClassFrame) => {
   setCurrentErrorFrame(frame.errorFrame)
 
   if (frame.error) {
-    if (typeof frame.instance.componentDidCatch === 'function')
+    // We simply have to bail when a loop occurs
+    if (++frame.instance.updater._thrown >= RE_RENDER_LIMIT) return null
+
+    frame.instance._isMounted = true
+
+    if (typeof frame.instance.componentDidCatch === 'function') {
       frame.instance.componentDidCatch(frame.error)
-    if (typeof frame.type.getDerivedStateFromError === 'function')
+    }
+
+    if (typeof frame.type.getDerivedStateFromError === 'function') {
       frame.instance.updater.enqueueSetState(
+        frame.instance,
         frame.type.getDerivedStateFromError(frame.error)
       )
+    }
   }
 
   return render(frame.type, frame.instance, queue)

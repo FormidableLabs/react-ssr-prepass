@@ -218,7 +218,7 @@ const visitLoop = (
     const errorFrame = getCurrentErrorFrame()
     if (!errorFrame) throw error
     errorFrame.error = error
-    queue.push(errorFrame)
+    queue.unshift(errorFrame)
     return false
   } finally {
     ReactCurrentDispatcher.current = prevDispatcher
@@ -247,8 +247,6 @@ export const visit = (
   queue: Frame[],
   visitor: Visitor
 ) => {
-  if (!init.length) return
-
   const traversalChildren: AbstractElement[][] = [init]
   const traversalMap: Array<void | ContextMap> = [flushPrevContextMap()]
   const traversalStore: Array<void | ContextEntry> = [flushPrevContextStore()]
@@ -305,9 +303,9 @@ export const update = (frame: Frame, queue: Frame[], visitor: Visitor) => {
     const prevDispatcher = ReactCurrentDispatcher.current
     let children = null
 
-    try {
-      ReactCurrentDispatcher.current = Dispatcher
+    ReactCurrentDispatcher.current = Dispatcher
 
+    try {
       if (frame.kind === 'frame.class') {
         children = updateClassComponent(queue, frame)
       } else if (frame.kind === 'frame.hooks') {
@@ -319,7 +317,7 @@ export const update = (frame: Frame, queue: Frame[], visitor: Visitor) => {
       const errorFrame = getCurrentErrorFrame()
       if (!errorFrame) throw error
       errorFrame.error = error
-      queue.push(errorFrame)
+      queue.unshift(errorFrame)
       children = null
     } finally {
       ReactCurrentDispatcher.current = prevDispatcher
