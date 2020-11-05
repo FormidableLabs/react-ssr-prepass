@@ -52,7 +52,7 @@ describe('renderPrepass', () => {
 
       const render$ = renderPrepass(<Outer />)
 
-      return render$.catch(error => {
+      return render$.catch((error) => {
         expect(Inner).toHaveBeenCalledTimes(1)
         expect(error).toBe(exception)
       })
@@ -66,7 +66,7 @@ describe('renderPrepass', () => {
         return null
       }
 
-      const Wait = props => {
+      const Wait = (props) => {
         const start = Date.now()
         while (Date.now() - start < 21) {}
         return props.children
@@ -149,7 +149,7 @@ describe('renderPrepass', () => {
         })
         .mockImplementationOnce(() => value)
 
-      const Inner = jest.fn(props => {
+      const Inner = jest.fn((props) => {
         expect(props.value).toBe(value)
         // We expect useState to work across suspense
         expect(props.state).toBe('test')
@@ -191,7 +191,7 @@ describe('renderPrepass', () => {
         })
         .mockImplementation(() => 'test')
 
-      const Inner = jest.fn(props => {
+      const Inner = jest.fn((props) => {
         expect(props.value).toBe('test')
         expect(props.state).toBe('test')
       })
@@ -232,7 +232,7 @@ describe('renderPrepass', () => {
         })
         .mockImplementation(() => 'test')
 
-      const Inner = jest.fn(props => {
+      const Inner = jest.fn((props) => {
         expect(props.state).toBe('test')
       })
 
@@ -263,7 +263,7 @@ describe('renderPrepass', () => {
       const Inner = jest.fn(() => null)
       const Outer = jest.fn(() => <Inner />)
 
-      const visitor = jest.fn(element => {
+      const visitor = jest.fn((element) => {
         if (element.type === Inner) return Promise.resolve()
       })
 
@@ -294,7 +294,7 @@ describe('renderPrepass', () => {
         })
         .mockImplementationOnce(() => value)
 
-      const Inner = jest.fn(props => expect(props.value).toBe(value))
+      const Inner = jest.fn((props) => expect(props.value).toBe(value))
 
       class Outer extends Component {
         render() {
@@ -389,12 +389,12 @@ describe('renderPrepass', () => {
   describe('lazy components', () => {
     it('supports resolving lazy components', () => {
       const value = {}
-      const Inner = jest.fn(props => expect(props.value).toBe(value))
+      const Inner = jest.fn((props) => expect(props.value).toBe(value))
       const loadInner = jest.fn().mockResolvedValueOnce(Inner)
 
       const Outer = React.lazy(loadInner)
       // Initially React sets the lazy component's status to -1
-      expect(Outer._status).toBe(-1 /* INITIAL */)
+      expect(Outer._payload._status).toBe(-1 /* INITIAL */)
 
       const render$ = renderPrepass(<Outer value={value} />)
 
@@ -405,14 +405,14 @@ describe('renderPrepass', () => {
 
       // The lazy component's state should be updated with some initial
       // progress
-      expect(Outer._status).toBe(0 /* PENDING */)
+      expect(Outer._payload._status).toBe(0 /* PENDING */)
 
       return render$.then(() => {
         // Afterwards we can expect Inner to have loaded and rendered
         expect(Inner).toHaveBeenCalledTimes(1)
 
         // The lazy component's state should reflect this
-        expect(Outer._status).toBe(1 /* SUCCESSFUL */)
+        expect(Outer._payload._status).toBe(1 /* SUCCESSFUL */)
       })
     })
 
@@ -424,28 +424,11 @@ describe('renderPrepass', () => {
 
       expect(Inner).not.toHaveBeenCalled()
       expect(loadInner).toHaveBeenCalledTimes(1)
-      expect(Outer._status).toBe(0 /* PENDING */)
+      expect(Outer._payload._status).toBe(0 /* PENDING */)
 
       return render$.then(() => {
         expect(Inner).toHaveBeenCalledTimes(1)
-        expect(Outer._status).toBe(1 /* SUCCESSFUL */)
-      })
-    })
-
-    it('supports skipping rejecting lazy components', () => {
-      const Inner = jest.fn(() => null)
-      const loadInner = jest.fn().mockRejectedValueOnce(new Error('test'))
-      const Outer = React.lazy(loadInner)
-      const render$ = renderPrepass(<Outer />)
-
-      expect(Inner).not.toHaveBeenCalled()
-      expect(loadInner).toHaveBeenCalledTimes(1)
-      expect(Outer._status).toBe(0 /* PENDING */)
-
-      return render$.then(() => {
-        expect(Inner).toHaveBeenCalledTimes(0)
-        // The lazy component's state should reflect the rejected promise
-        expect(Outer._status).toBe(2 /* FAILED */)
+        expect(Outer._payload._status).toBe(1 /* SUCCESSFUL */)
       })
     })
 
@@ -455,10 +438,10 @@ describe('renderPrepass', () => {
       const render$ = renderPrepass(<Outer />)
 
       expect(loadInner).toHaveBeenCalledTimes(1)
-      expect(Outer._status).toBe(0 /* PENDING */)
+      expect(Outer._payload._status).toBe(0 /* PENDING */)
 
       return render$.then(() => {
-        expect(Outer._status).toBe(2 /* FAILED */)
+        expect(Outer._payload._status).toBe(2 /* FAILED */)
       })
     })
 
@@ -467,8 +450,8 @@ describe('renderPrepass', () => {
       const loadInner = jest.fn().mockResolvedValueOnce(Inner)
       const Outer = React.lazy(loadInner)
 
-      Outer._status = 1 /* SUCCESSFUL */
-      Outer._result = Inner /* SUCCESSFUL */
+      Outer._payload._status = 1 /* SUCCESSFUL */
+      Outer._payload._result = Inner /* SUCCESSFUL */
 
       renderPrepass(<Outer />)
 
