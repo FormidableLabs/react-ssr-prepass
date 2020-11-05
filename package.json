@@ -35,11 +35,6 @@
       "@babel/preset-react"
     ]
   },
-  "jest": {
-    "globals": {
-      "__DEV__": true
-    }
-  },
   "lint-staged": {
     "**/*.js": [
       "flow focus-check",
@@ -58,9 +53,7 @@
     "react": "^16.8.0",
     "react-is": "^16.8.0"
   },
-  "dependencies": {
-    "object-is": "^1.1.2"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@ampproject/rollup-plugin-closure-compiler": "^0.25.2",
     "@babel/core": "^7.9.0",
