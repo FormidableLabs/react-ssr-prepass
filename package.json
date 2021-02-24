@@ -1,6 +1,6 @@
 {
   "name": "react-ssr-prepass",
-  "version": "1.3.0-rc.0",
+  "version": "1.3.0",
   "description": "A custom partial React SSR renderer for prefetching and suspense",
   "main": "index.js",
   "author": "Phil Plückthun <phil.pluckthun@formidable.com>",
