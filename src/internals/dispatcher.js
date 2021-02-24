@@ -5,6 +5,9 @@ import { readContextValue } from './context'
 import is from './objectIs'
 
 import type {
+  MutableSource,
+  MutableSourceGetSnapshotFn,
+  MutableSourceSubscribeFn,
   AbstractContext,
   BasicStateAction,
   Dispatch,
@@ -14,6 +17,7 @@ import type {
 } from '../types'
 
 export opaque type Identity = {}
+export opaque type OpaqueIDType = string
 
 let currentIdentity: Identity | null = null
 
@@ -284,6 +288,15 @@ function useCallback<T>(callback: T, deps: Array<mixed> | void | null): T {
   return useMemo(() => callback, deps)
 }
 
+function useMutableSource<Source, Snapshot>(
+  source: MutableSource<Source>,
+  getSnapshot: MutableSourceGetSnapshotFn<Source, Snapshot>,
+  _subscribe: MutableSourceSubscribeFn<Source, Snapshot>
+): Snapshot {
+  getCurrentIdentity()
+  return getSnapshot(source._source)
+}
+
 function noop(): void {}
 
 function useTransition(): [(callback: () => void) => void, boolean] {
@@ -305,6 +318,7 @@ export const Dispatcher = {
   useRef,
   useState,
   useCallback,
+  useMutableSource,
   useTransition,
   useDeferredValue,
   // ignore useLayout effect completely as usage of it will be caught
