@@ -1,7 +1,13 @@
 // @flow
 
 import { createElement, type Node } from 'react'
-import type { LazyComponent, DefaultProps, LazyFrame, Frame } from '../types'
+import type {
+  LazyComponent,
+  LazyComponentPayload,
+  DefaultProps,
+  LazyFrame,
+  Frame
+} from '../types'
 import { getChildrenArray } from '../element'
 
 import {
@@ -9,32 +15,44 @@ import {
   setCurrentContextStore,
   getCurrentContextStore,
   setCurrentContextMap,
-  getCurrentContextMap
+  getCurrentContextMap,
+  setCurrentErrorFrame,
+  getCurrentErrorFrame
 } from '../internals'
 
 const resolve = (type: LazyComponent): Promise<void> => {
-  type._status = 0 /* PENDING */
+  const payload = (type._payload || type: any)
+  if (payload._status === 0) {
+    return payload._result
+  } else if (payload._status === 1) {
+    return Promise.resolve(payload._result)
+  } else if (payload._status === 2) {
+    return Promise.reject(payload._result)
+  }
 
-  return type
-    ._ctor()
-    .then(Component => {
+  payload._status = 0 /* PENDING */
+
+  return (payload._result = (payload._ctor || payload._result)()
+    .then((Component) => {
+      payload._result = Component
       if (typeof Component === 'function') {
-        type._result = Component
-        type._status = 1 /* SUCCESSFUL */
+        payload._status = 1 /* SUCCESSFUL */
       } else if (
         Component !== null &&
         typeof Component === 'object' &&
         typeof Component.default === 'function'
       ) {
-        type._result = Component.default
-        type._status = 1 /* SUCCESSFUL */
+        payload._result = Component.default
+        payload._status = 1 /* SUCCESSFUL */
       } else {
-        type._status = 2 /* FAILED */
+        payload._status = 2 /* FAILED */
       }
     })
-    .catch(() => {
-      type._status = 2 /* FAILED */
-    })
+    .catch((error) => {
+      payload._status = 2 /* FAILED */
+      payload._result = error
+      return Promise.reject(error)
+    }))
 }
 
 const render = (
@@ -44,8 +62,9 @@ const render = (
 ): Node => {
   // Component has previously been fetched successfully,
   // so create the element with passed props and return it
-  if (type._status === 1) {
-    return createElement(type._result, props)
+  const payload = ((type._payload || type: any): LazyComponentPayload)
+  if (payload._status === 1) {
+    return createElement(payload._result, props)
   }
 
   return null
@@ -57,11 +76,13 @@ export const mount = (
   queue: Frame[]
 ): Node => {
   // If the component has not been fetched yet, suspend this component
-  if (type._status !== 2 && type._status !== 1) {
+  const payload = ((type._payload || type: any): LazyComponentPayload)
+  if (payload._status <= 0) {
     queue.push({
+      kind: 'frame.lazy',
       contextMap: getCurrentContextMap(),
       contextStore: getCurrentContextStore(),
-      kind: 'frame.lazy',
+      errorFrame: getCurrentErrorFrame(),
       thenable: resolve(type),
       props,
       type
@@ -77,5 +98,6 @@ export const update = (queue: Frame[], frame: LazyFrame): Node => {
   setCurrentIdentity(null)
   setCurrentContextMap(frame.contextMap)
   setCurrentContextStore(frame.contextStore)
+  setCurrentErrorFrame(frame.errorFrame)
   return render(frame.type, frame.props, queue)
 }

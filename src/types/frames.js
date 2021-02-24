@@ -9,7 +9,8 @@ import type { AbstractElement, DefaultProps, ComponentStatics } from './element'
 export type BaseFrame = {
   contextMap: ContextMap,
   contextStore: ContextStore,
-  thenable: Promise<any>
+  errorFrame: ClassFrame | null,
+  thenable: Promise<any> | null
 }
 
 /** Description of suspended React.lazy components */
@@ -23,6 +24,7 @@ export type LazyFrame = BaseFrame & {
 export type ClassFrame = BaseFrame & {
   kind: 'frame.class',
   type: ComponentType<DefaultProps> & ComponentStatics,
+  error: Error | null,
   instance: any
 }
 
@@ -38,9 +40,10 @@ export type HooksFrame = BaseFrame & {
 /** Description of a pause to yield to the event loop */
 export type YieldFrame = BaseFrame & {
   kind: 'frame.yield',
-  children: AbstractElement[][],
-  map: Array<void | ContextMap>,
-  store: Array<void | ContextEntry>
+  traversalChildren: AbstractElement[][],
+  traversalMap: Array<void | ContextMap>,
+  traversalStore: Array<void | ContextEntry>,
+  traversalErrorFrame: Array<null | ClassFrame>
 }
 
 export type Frame = ClassFrame | HooksFrame | LazyFrame | YieldFrame

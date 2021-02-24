@@ -29,13 +29,6 @@ describe('typeOf', () => {
     expect(
       typeOf({
         $$typeof: is.Element,
-        type: is.ConcurrentMode
-      })
-    ).toBe(REACT_CONCURRENT_MODE_TYPE)
-
-    expect(
-      typeOf({
-        $$typeof: is.Element,
         type: is.Fragment
       })
     ).toBe(REACT_FRAGMENT_TYPE)

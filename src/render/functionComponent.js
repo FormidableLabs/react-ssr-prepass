@@ -23,6 +23,8 @@ import {
   getCurrentContextStore,
   setCurrentContextMap,
   getCurrentContextMap,
+  setCurrentErrorFrame,
+  getCurrentErrorFrame,
   renderWithHooks,
   setFirstHook,
   getFirstHook
@@ -38,6 +40,7 @@ const makeFrame = (
   id: getCurrentIdentity(),
   hook: getFirstHook(),
   kind: 'frame.hooks',
+  errorFrame: getCurrentErrorFrame(),
   thenable,
   props,
   type
@@ -90,5 +93,6 @@ export const update = (queue: Frame[], frame: HooksFrame) => {
   setCurrentIdentity(frame.id)
   setCurrentContextMap(frame.contextMap)
   setCurrentContextStore(frame.contextStore)
+  setCurrentErrorFrame(frame.errorFrame)
   return render(frame.type, frame.props, queue)
 }

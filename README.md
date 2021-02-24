@@ -81,7 +81,7 @@ import { renderToString } from 'react-dom/server'
 
 import ssrPrepass from 'react-ssr-prepass'
 
-const renderApp = async App => {
+const renderApp = async (App) => {
   const element = createElement(App)
   await ssrPrepass(element)
 
@@ -112,30 +112,6 @@ You should be aware that `react-ssr-prepass` does not handle any
 data rehydration. In most cases it's fine to collect data from your cache
 or store after running `ssrPrepass`, turn it into JSON, and send it
 down in your HTML result.
-
-## Examples & Recipes
-
-### Usage with `react-apollo`
-
-Instead of using `react-apollo`'s own `getDataFromTree` function, `react-ssr-prepass`
-can be used instead. For this to work, we will have to write a visitor function
-that knows how to suspend on `react-apollo`'s `Query` component.
-
-Luckily this is quite simple, since all we need to do is call the `fetchData`
-method on the `Query` component's instance.
-
-```js
-ssrPrepass(<App />, (_element, instance) => {
-  if (instance !== undefined && typeof instance.fetchData === 'function') {
-    return instance.fetchData()
-  }
-})
-```
-
-Since we're now calling `fetchData` when it exists, which returns a `Promise`
-already, `ssrPrepass` will suspend on `<Query>` components.
-
-[More information can be found in Apollo's own docs](https://www.apollographql.com/docs/react/features/server-side-rendering.html#getDataFromTree)
 
 ## Prior Art
 

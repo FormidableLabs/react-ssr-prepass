@@ -29,6 +29,7 @@ export type DefaultProps = {
 
 export type ComponentStatics = {
   getDerivedStateFromProps?: (props: Object, state: mixed) => mixed,
+  getDerivedStateFromError?: (error: Error) => mixed,
   contextType?: AbstractContext,
   contextTypes?: Object,
   childContextTypes?: Object,
@@ -75,12 +76,45 @@ export type FragmentElement = {
   $$typeof: typeof REACT_ELEMENT_TYPE
 }
 
-export type LazyComponent = {
+type LazyComponentUninitialized = {
+  _status: -1,
+  _result: () => Promise<any>
+}
+
+type LazyComponentPending = {
+  _status: 0,
+  _result: Promise<any>
+}
+
+type LazyComponentResolved = {
+  _status: 1,
+  _result: ComponentType<DefaultProps> & ComponentStatics
+}
+
+type LazyComponentRejected = {
+  _status: 2,
+  _result: mixed
+}
+
+export type LazyComponentPayload =
+  | LazyComponentUninitialized
+  | LazyComponentPending
+  | LazyComponentResolved
+  | LazyComponentRejected
+
+type LazyComponentLegacy = {
   $$typeof: typeof REACT_LAZY_TYPE,
   _ctor: () => Promise<any>,
   _status: -1 | 0 | 1 | 2,
-  _result: any
+  _result: mixed
 }
+
+type LazyComponentModern = {
+  $$typeof: typeof REACT_LAZY_TYPE,
+  _payload: LazyComponentPayload
+}
+
+export type LazyComponent = LazyComponentLegacy | LazyComponentModern
 
 /** <React.lazy(Comp)> */
 export type LazyElement = {

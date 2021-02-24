@@ -19,13 +19,18 @@ import {
   setCurrentContextMap,
   getCurrentContextMap,
   setCurrentContextStore,
-  getCurrentContextStore
+  getCurrentContextStore,
+  setCurrentErrorFrame,
+  getCurrentErrorFrame
 } from '../internals'
+
+const RE_RENDER_LIMIT = 25
 
 const createUpdater = () => {
   const queue = []
 
   return {
+    _thrown: 0,
     queue,
     isMounted: () => false,
     enqueueForceUpdate: () => null,
@@ -80,6 +85,15 @@ const createInstance = (type: any, props: DefaultProps) => {
     instance.state = null
   }
 
+  if (
+    typeof instance.componentDidCatch === 'function' ||
+    typeof type.getDerivedStateFromError === 'function'
+  ) {
+    const frame = makeFrame(type, instance, null)
+    frame.errorFrame = frame
+    setCurrentErrorFrame(frame)
+  }
+
   if (typeof type.getDerivedStateFromProps === 'function') {
     const { getDerivedStateFromProps } = type
     const state = getDerivedStateFromProps(instance.props, instance.state)
@@ -95,11 +109,17 @@ const createInstance = (type: any, props: DefaultProps) => {
   return instance
 }
 
-const makeFrame = (type: any, instance: any, thenable: Promise<any>) => ({
+const makeFrame = (
+  type: any,
+  instance: any,
+  thenable: Promise<any> | null
+) => ({
   contextMap: getCurrentContextMap(),
   contextStore: getCurrentContextStore(),
+  errorFrame: getCurrentErrorFrame(),
   thenable,
   kind: 'frame.class',
+  error: null,
   instance,
   type
 })
@@ -170,5 +190,25 @@ export const update = (queue: Frame[], frame: ClassFrame) => {
   setCurrentIdentity(null)
   setCurrentContextMap(frame.contextMap)
   setCurrentContextStore(frame.contextStore)
+  setCurrentErrorFrame(frame.errorFrame)
+
+  if (frame.error) {
+    // We simply have to bail when a loop occurs
+    if (++frame.instance.updater._thrown >= RE_RENDER_LIMIT) return null
+
+    frame.instance._isMounted = true
+
+    if (typeof frame.instance.componentDidCatch === 'function') {
+      frame.instance.componentDidCatch(frame.error)
+    }
+
+    if (typeof frame.type.getDerivedStateFromError === 'function') {
+      frame.instance.updater.enqueueSetState(
+        frame.instance,
+        frame.type.getDerivedStateFromError(frame.error)
+      )
+    }
+  }
+
   return render(frame.type, frame.instance, queue)
 }
