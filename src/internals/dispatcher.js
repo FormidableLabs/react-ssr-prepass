@@ -331,6 +331,7 @@ export const Dispatcher = {
   useMutableSource,
   useTransition,
   useDeferredValue,
+  useOpaqueIdentifier,
   // ignore useLayout effect completely as usage of it will be caught
   // in a subsequent render pass
   useLayoutEffect: noop,
