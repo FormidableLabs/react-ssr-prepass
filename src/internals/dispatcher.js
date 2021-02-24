@@ -2,6 +2,7 @@
 // Source: https://github.com/facebook/react/blob/c21c41e/packages/react-dom/src/server/ReactPartialRendererHooks.js
 
 import { readContextValue } from './context'
+import { rendererStateRef } from './state'
 import is from './objectIs'
 
 import type {
@@ -304,6 +305,10 @@ function useTransition(): [(callback: () => void) => void, boolean] {
     callback()
   }
   return [startTransition, false]
+}
+
+function useOpaqueIdentifier(): OpaqueIDType {
+  return 'R:' + (rendererStateRef.current.uniqueID++).toString(36)
 }
 
 function useDeferredValue<T>(input: T): T {
