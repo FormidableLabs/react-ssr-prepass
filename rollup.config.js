@@ -1,25 +1,23 @@
 import commonjs from '@rollup/plugin-commonjs'
-import nodeResolve from '@rollup/plugin-node-resolve'
+import resolve from '@rollup/plugin-node-resolve'
 import buble from '@rollup/plugin-buble'
-import babel from 'rollup-plugin-babel'
+import babel from '@rollup/plugin-babel'
+import replace from '@rollup/plugin-replace'
 import { terser } from 'rollup-plugin-terser'
 import compiler from '@ampproject/rollup-plugin-closure-compiler'
-import replace from 'rollup-plugin-replace'
 
-const pkgInfo = require('./package.json')
-const { peerDependencies, dependencies } = pkgInfo
+const pkg = require('./package.json')
 
-let external = ['dns', 'fs', 'path', 'url']
+const externalModules = [
+  'dns',
+  'fs',
+  'path',
+  'url',
+  ...Object.keys(pkg.peerDependencies || {}),
+  ...Object.keys(pkg.dependencies || {})
+]
 
-if (pkgInfo.peerDependencies) {
-  external.push(...Object.keys(peerDependencies))
-}
-
-if (pkgInfo.dependencies) {
-  external.push(...Object.keys(dependencies))
-}
-
-const externalPredicate = new RegExp(`^(${external.join('|')})($|/)`)
+const externalPredicate = new RegExp(`^(${externalModules.join('|')})($|/)`)
 const externalTest = (id) => {
   if (id === 'babel-plugin-transform-async-to-promises/helpers') {
     return false
@@ -72,11 +70,13 @@ const terserMinified = terser({
 const makePlugins = (isProduction = false) => [
   babel({
     babelrc: false,
+    babelHelpers: 'bundled',
     exclude: 'node_modules/**',
     presets: [],
     plugins: ['@babel/plugin-transform-flow-strip-types']
   }),
-  nodeResolve({
+  resolve({
+    dedupe: externalModules,
     mainFields: ['module', 'jsnext', 'main'],
     browser: true
   }),
@@ -98,6 +98,7 @@ const makePlugins = (isProduction = false) => [
   }),
   babel({
     babelrc: false,
+    babelHelpers: 'bundled',
     exclude: 'node_modules/**',
     presets: [],
     plugins: [

@@ -6,8 +6,5 @@
 .*/node_modules/react-is/.*
 .*/node_modules/styled-components/.*
 
-[libs]
-types/
-
 [include]
 .*/node_modules/react[A-Z-a-z-]*/.*
