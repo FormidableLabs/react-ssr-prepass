@@ -250,6 +250,15 @@ function useRef<T>(initialValue: T): { current: T } {
   }
 }
 
+function useOpaqueIdentifier(): OpaqueIDType {
+  getCurrentIdentity()
+  workInProgressHook = createWorkInProgressHook()
+  if (!workInProgressHook.memoizedState)
+    workInProgressHook.memoizedState =
+      'R:' + (rendererStateRef.current.uniqueID++).toString(36)
+  return workInProgressHook.memoizedState
+}
+
 function dispatchAction<A>(
   componentIdentity: Identity,
   queue: UpdateQueue<A>,
@@ -305,10 +314,6 @@ function useTransition(): [(callback: () => void) => void, boolean] {
     callback()
   }
   return [startTransition, false]
-}
-
-function useOpaqueIdentifier(): OpaqueIDType {
-  return 'R:' + (rendererStateRef.current.uniqueID++).toString(36)
 }
 
 function useDeferredValue<T>(input: T): T {
