@@ -47,3 +47,7 @@ export type YieldFrame = BaseFrame & {
 }
 
 export type Frame = ClassFrame | HooksFrame | LazyFrame | YieldFrame
+
+export type RendererState = {|
+  uniqueID: number
+|}

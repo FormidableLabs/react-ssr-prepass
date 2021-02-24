@@ -2,9 +2,13 @@
 // Source: https://github.com/facebook/react/blob/c21c41e/packages/react-dom/src/server/ReactPartialRendererHooks.js
 
 import { readContextValue } from './context'
+import { rendererStateRef } from './state'
 import is from './objectIs'
 
 import type {
+  MutableSource,
+  MutableSourceGetSnapshotFn,
+  MutableSourceSubscribeFn,
   AbstractContext,
   BasicStateAction,
   Dispatch,
@@ -14,6 +18,7 @@ import type {
 } from '../types'
 
 export opaque type Identity = {}
+export opaque type OpaqueIDType = string
 
 let currentIdentity: Identity | null = null
 
@@ -245,6 +250,15 @@ function useRef<T>(initialValue: T): { current: T } {
   }
 }
 
+function useOpaqueIdentifier(): OpaqueIDType {
+  getCurrentIdentity()
+  workInProgressHook = createWorkInProgressHook()
+  if (!workInProgressHook.memoizedState)
+    workInProgressHook.memoizedState =
+      'R:' + (rendererStateRef.current.uniqueID++).toString(36)
+  return workInProgressHook.memoizedState
+}
+
 function dispatchAction<A>(
   componentIdentity: Identity,
   queue: UpdateQueue<A>,
@@ -284,6 +298,15 @@ function useCallback<T>(callback: T, deps: Array<mixed> | void | null): T {
   return useMemo(() => callback, deps)
 }
 
+function useMutableSource<Source, Snapshot>(
+  source: MutableSource<Source>,
+  getSnapshot: MutableSourceGetSnapshotFn<Source, Snapshot>,
+  _subscribe: MutableSourceSubscribeFn<Source, Snapshot>
+): Snapshot {
+  getCurrentIdentity()
+  return getSnapshot(source._source)
+}
+
 function noop(): void {}
 
 function useTransition(): [(callback: () => void) => void, boolean] {
@@ -305,8 +328,10 @@ export const Dispatcher = {
   useRef,
   useState,
   useCallback,
+  useMutableSource,
   useTransition,
   useDeferredValue,
+  useOpaqueIdentifier,
   // ignore useLayout effect completely as usage of it will be caught
   // in a subsequent render pass
   useLayoutEffect: noop,

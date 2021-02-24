@@ -180,3 +180,17 @@ export type AbstractElement =
   | DOMElement
   | PortalElement
   | SuspenseElement
+
+export type MutableSourceGetSnapshotFn<
+  Source: $NonMaybeType<mixed>,
+  Snapshot
+> = (source: Source) => Snapshot
+
+export type MutableSourceSubscribeFn<Source: $NonMaybeType<mixed>, Snapshot> = (
+  source: Source,
+  callback: (snapshot: Snapshot) => void
+) => () => void
+
+export type MutableSource<Source: $NonMaybeType<mixed>> = {
+  _source: Source
+}
