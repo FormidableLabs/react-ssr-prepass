@@ -25,48 +25,7 @@ const externalTest = (id) => {
   return externalPredicate.test(id)
 }
 
-const terserPretty = terser({
-  warnings: true,
-  ecma: 5,
-  keep_fnames: true,
-  ie8: false,
-  compress: {
-    pure_getters: true,
-    toplevel: true,
-    booleans_as_integers: false,
-    keep_fnames: true,
-    keep_fargs: true,
-    if_return: false,
-    ie8: false,
-    sequences: false,
-    loops: false,
-    conditionals: false,
-    join_vars: false
-  },
-  mangle: false,
-  output: {
-    beautify: true,
-    braces: true,
-    indent_level: 2
-  }
-})
-
-const terserMinified = terser({
-  warnings: true,
-  ecma: 5,
-  ie8: false,
-  toplevel: true,
-  compress: {
-    keep_infinity: true,
-    pure_getters: true,
-    passes: 10
-  },
-  output: {
-    comments: false
-  }
-})
-
-const makePlugins = (isProduction = false) => [
+const plugins = [
   babel({
     babelrc: false,
     babelHelpers: 'bundled',
@@ -112,50 +71,58 @@ const makePlugins = (isProduction = false) => [
       ]
     ]
   }),
-  isProduction &&
-    compiler({
-      compilation_level: 'SIMPLE_OPTIMIZATIONS'
-    }),
-  isProduction ? terserMinified : terserPretty
+  compiler({
+    compilation_level: 'SIMPLE_OPTIMIZATIONS'
+  }),
+  terser({
+    warnings: true,
+    ecma: 5,
+    keep_fnames: true,
+    ie8: false,
+    compress: {
+      pure_getters: true,
+      toplevel: true,
+      booleans_as_integers: false,
+      keep_fnames: true,
+      keep_fargs: true,
+      if_return: false,
+      ie8: false,
+      sequences: false,
+      loops: false,
+      conditionals: false,
+      join_vars: false
+    },
+    mangle: false,
+    output: {
+      beautify: true,
+      braces: true,
+      indent_level: 2
+    }
+  })
 ]
 
-const config = {
+export default {
   input: './src/index.js',
   onwarn: () => {},
   external: externalTest,
   treeshake: {
     propertyReadSideEffects: false
-  }
-}
-
-const name = 'react-ssr-prepass'
-
-export default [
-  {
-    ...config,
-    plugins: makePlugins(false),
-    output: [
-      {
-        sourcemap: true,
-        legacy: true,
-        freeze: false,
-        esModule: false,
-        file: `./dist/${name}.development.js`,
-        format: 'cjs'
-      }
-    ]
   },
-  {
-    ...config,
-    plugins: makePlugins(true),
-    output: [
-      {
-        sourcemap: true,
-        legacy: true,
-        freeze: false,
-        file: `./dist/${name}.production.min.js`,
-        format: 'cjs'
-      }
-    ]
-  }
-]
+  plugins,
+  output: [
+    {
+      sourcemap: true,
+      freeze: false,
+      // NOTE: *.mjs files will lead to issues since react is still a non-ESM package
+      // the same goes for package.json:exports
+      file: './dist/react-ssr-prepass.es.js',
+      format: 'esm'
+    },
+    {
+      sourcemap: true,
+      freeze: false,
+      file: './dist/react-ssr-prepass.js',
+      format: 'cjs'
+    }
+  ]
+}
