@@ -2,7 +2,6 @@ import commonjs from '@rollup/plugin-commonjs'
 import resolve from '@rollup/plugin-node-resolve'
 import buble from '@rollup/plugin-buble'
 import babel from '@rollup/plugin-babel'
-import replace from '@rollup/plugin-replace'
 import { terser } from 'rollup-plugin-terser'
 import compiler from '@ampproject/rollup-plugin-closure-compiler'
 
@@ -113,10 +112,6 @@ const makePlugins = (isProduction = false) => [
       ]
     ]
   }),
-  isProduction &&
-    replace({
-      'process.env.NODE_ENV': JSON.stringify('production')
-    }),
   isProduction &&
     compiler({
       compilation_level: 'SIMPLE_OPTIMIZATIONS'
