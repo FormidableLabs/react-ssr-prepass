@@ -79,10 +79,9 @@ const {
 // yielding behavior that gives the event loop a chance to continue
 // running when the prepasses would otherwise take too long
 export const SHOULD_YIELD = typeof setImmediate === 'function'
-
 // Time in ms after which the otherwise synchronous visitor yields so that
 // the event loop is not interrupted for too long
-const YIELD_AFTER_MS = process.env.NODE_ENV !== 'production' ? 20 : 5
+const YIELD_AFTER_MS = 5
 
 const render = (
   type: ComponentType<DefaultProps> & ComponentStatics,
