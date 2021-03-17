@@ -10,7 +10,7 @@ fs.copyFileSync(
 
 fs.copyFileSync(
   path.resolve(__dirname, 'react-ssr-prepass.js.flow'),
-  path.resolve(__dirname, '../dist/react-ssr-prepass.js.ts')
+  path.resolve(__dirname, '../dist/react-ssr-prepass.js.flow')
 )
 
 fs.copyFileSync(
