@@ -250,12 +250,15 @@ function useRef<T>(initialValue: T): { current: T } {
   }
 }
 
+function useId(): string {
+  return 'R:' + (rendererStateRef.current.uniqueID++).toString(36)
+}
+
 function useOpaqueIdentifier(): OpaqueIDType {
   getCurrentIdentity()
   workInProgressHook = createWorkInProgressHook()
   if (!workInProgressHook.memoizedState)
-    workInProgressHook.memoizedState =
-      'R:' + (rendererStateRef.current.uniqueID++).toString(36)
+    workInProgressHook.memoizedState = useId()
   return workInProgressHook.memoizedState
 }
 
@@ -332,6 +335,7 @@ export const Dispatcher = {
   useTransition,
   useDeferredValue,
   useOpaqueIdentifier,
+  useId,
   // ignore useLayout effect completely as usage of it will be caught
   // in a subsequent render pass
   useLayoutEffect: noop,
