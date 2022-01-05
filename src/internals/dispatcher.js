@@ -320,8 +320,22 @@ function useDeferredValue<T>(input: T): T {
   return input
 }
 
+// See: https://github.com/facebook/react/blob/fe41934/packages/use-sync-external-store/src/useSyncExternalStoreShimServer.js#L10-L20
+function useSyncExternalStore<T>(
+  subscribe: (() => void) => () => void,
+  getSnapshot: () => T,
+  getServerSnapshot?: () => T
+): T {
+  // Note: The shim does not use getServerSnapshot, because pre-18 versions of
+  // React do not expose a way to check if we're hydrating. So users of the shim
+  // will need to track that themselves and return the correct value
+  // from `getSnapshot`.
+  return getSnapshot()
+}
+
 export const Dispatcher = {
   readContext,
+  useSyncExternalStore,
   useContext,
   useMemo,
   useReducer,
