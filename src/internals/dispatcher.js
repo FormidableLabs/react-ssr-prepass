@@ -332,6 +332,11 @@ export const Dispatcher = {
   useTransition,
   useDeferredValue,
   useOpaqueIdentifier,
+  // aliased for now
+  // see: https://github.com/FormidableLabs/react-ssr-prepass/pull/75
+  useId: useOpaqueIdentifier,
+  unstable_useId: useOpaqueIdentifier,
+  unstable_useOpaqueIdentifier: useOpaqueIdentifier,
   // ignore useLayout effect completely as usage of it will be caught
   // in a subsequent render pass
   useLayoutEffect: noop,
