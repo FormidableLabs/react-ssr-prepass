@@ -1,6 +1,7 @@
 [ignore]
 .*/node_modules/@babel/[A-Z-a-z-]*/.*
 .*/node_modules/babel[A-Z-a-z-]*/.*
+.*/node_modules/resolve/.*
 
 [untyped]
 .*/node_modules/react-is/.*

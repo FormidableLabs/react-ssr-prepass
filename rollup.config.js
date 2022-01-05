@@ -3,7 +3,6 @@ import resolve from '@rollup/plugin-node-resolve'
 import buble from '@rollup/plugin-buble'
 import babel from '@rollup/plugin-babel'
 import { terser } from 'rollup-plugin-terser'
-import compiler from '@ampproject/rollup-plugin-closure-compiler'
 
 const pkg = require('./package.json')
 
@@ -71,9 +70,6 @@ const plugins = [
       ]
     ]
   }),
-  compiler({
-    compilation_level: 'SIMPLE_OPTIMIZATIONS'
-  }),
   terser({
     warnings: true,
     ecma: 5,
@@ -92,7 +88,10 @@ const plugins = [
       conditionals: false,
       join_vars: false
     },
-    mangle: false,
+    mangle: {
+      module: true,
+      keep_fnames: true
+    },
     output: {
       beautify: true,
       braces: true,
