@@ -67,7 +67,7 @@
     "babel-plugin-transform-async-to-promises": "^0.8.15",
     "codecov": "^3.8.1",
     "flow-bin": "0.122.0",
-    "husky": "^4.3.0",
+    "husky-v4": "^4.3.0",
     "jest": "^26.6.3",
     "lint-staged": "^10.5.4",
     "npm-run-all": "^4.1.5",
