@@ -1,3 +1,5 @@
+import { JSDOM } from 'jsdom'
+
 import React, {
   Component,
   Fragment,
@@ -27,9 +29,8 @@ import {
 
 import { visitElement } from '../visitor'
 
-const {
-  ReactCurrentDispatcher
-} = (React: any).__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED
+const { ReactCurrentDispatcher } = (React: any)
+  .__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED
 
 let prevDispatcher = null
 
@@ -173,6 +174,7 @@ describe('visitElement', () => {
   })
 
   it('returns nothing for portal components', () => {
+    const document = new JSDOM().window.document
     const portal = createPortal(<Noop />, document.createElement('div'))
     const children = visitElement(portal, [], () => {})
     expect(children.length).toBe(0)
