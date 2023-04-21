@@ -1,6 +1,6 @@
 declare module 'react-ssr-prepass' {
   type Visitor = (
-    element: React.ElementType<any>,
+    element: React.ReactElement<any>,
     instance?: React.Component<any, any>
   ) => void | Promise<any>
 
