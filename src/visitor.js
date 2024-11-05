@@ -71,9 +71,9 @@ import {
   REACT_LAZY_TYPE
 } from './symbols'
 
-const {
-  ReactCurrentDispatcher
-} = (React: any).__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED
+const ref = (React: any).__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED
+
+let ReactCurrentDispatcher = ref && ref.ReactCurrentDispatcher
 
 // In the presence of setImmediate, i.e. on Node, we'll enable the
 // yielding behavior that gives the event loop a chance to continue
