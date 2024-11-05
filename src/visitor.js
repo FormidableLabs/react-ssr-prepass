@@ -71,9 +71,9 @@ import {
   REACT_LAZY_TYPE
 } from './symbols'
 
-const {
-  ReactCurrentDispatcher
-} = (React: any).__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED
+const { ReactCurrentDispatcher } =
+  (React: any).__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED ||
+  (React: any).__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE
 
 // In the presence of setImmediate, i.e. on Node, we'll enable the
 // yielding behavior that gives the event loop a chance to continue
